@@ -17,4 +17,7 @@ find_package(TBB REQUIRED)
 add_executable(TEST_WINDOW WIN32 "Test/WindowMain.cpp")
 target_link_libraries(TEST_WINDOW PRIVATE BSE_Core)
 
+add_executable(STATISTICS_TEST "Test/Statistics.cpp")
+target_link_libraries(STATISTICS_TEST PRIVATE BSE_Core)
+
 add_subdirectory("Engine")

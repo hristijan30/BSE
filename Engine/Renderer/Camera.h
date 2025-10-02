@@ -45,7 +45,6 @@ namespace BSE
         void Rotate(float yawOffset, float pitchOffset, bool constrainPitch = true);
         void SetFOV(float fov);
 
-        // State
         glm::vec3 Position;
         glm::vec3 Forward;
         glm::vec3 Up;

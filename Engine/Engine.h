@@ -1,10 +1,18 @@
 #pragma once
 
+#include "Time.h"
+
 namespace BSE
 {
-    class Engine
+    class DLL_EXPORT Engine
     {
-        Engine() = delete;
     public:
+        Engine() {}
+
+        void DetectFrameAndTickRates(BSE::Time& time);
+
+        static unsigned int GetCPUThreadCount();
+        static uint64_t GetTotalRAM();
+        static uint64_t GetAvailableRAM();
     };
 }
