@@ -1,2 +1,14 @@
 # BSE
-A C++ based game engine (WIP)
+
+**BSE** is an open-source game engine built with **C++20**.  
+
+---
+
+## Development Status
+
+| Platform | In-Development | Finished |
+|----------|----------------|----------|
+| **Windows** | Active | Worked on |
+| **Linux**   | Inactive | Paused    |
+
+---
