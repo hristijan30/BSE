@@ -4,39 +4,19 @@
 #include "../StandardInclude.h"
 
 #include "OpenGL.h"
+#include "Texture2D.h"
 
 namespace BSE
 {
-    class DLL_EXPORT Texture2D
-    {
-    public:
-        Texture2D() = default;
-        Texture2D(const std::string& path, bool srgb = true);
-        ~Texture2D();
-
-        bool LoadFromFile(const std::string& path, bool srgb = true);
-        void Bind(GLuint slot = 0) const;
-        void Unbind() const;
-
-        GLuint GetID() const { return m_id; }
-        int GetWidth() const { return m_width; }
-        int GetHeight() const { return m_height; }
-        bool IsLoaded() const { return m_loaded; }
-
-    private:
-        GLuint m_id = 0;
-        int m_width = 0;
-        int m_height = 0;
-        bool m_loaded = false;
-    };
-
     class DLL_EXPORT Material
     {
     public:
         Material() = default;
         ~Material() = default;
 
-        bool LoadFromFile(const std::string& filepath); // Extention: .material
+        bool LoadFromFile(const std::string& filepath);
+        bool ParseMaterialFile(const std::string& filepath);
+        void FinalizeTexturesFromImageData(const std::unordered_map<std::string, ImageData>& images);
         void Bind(GLuint shaderProgram) const;
 
         const Texture2D* GetDiffuseMap() const { return m_diffuse.get(); }
@@ -54,6 +34,13 @@ namespace BSE
         float EmissionStrength = 0.0f;
         float SpecularStrength = 0.5f;
 
+        std::string diffusePath;
+        std::string normalPath;
+        std::string roughnessPath;
+        std::string metallicPath;
+        std::string aoPath;
+        std::string emissivePath;
+
     private:
         std::unique_ptr<Texture2D> m_diffuse;
         std::unique_ptr<Texture2D> m_normal;
@@ -62,6 +49,6 @@ namespace BSE
         std::unique_ptr<Texture2D> m_ao;
         std::unique_ptr<Texture2D> m_emissive;
 
-        bool parseMaterialFile(const std::string& filepath);
+        bool parseMaterialFileInternal(const std::string& filepath);
     };
 }

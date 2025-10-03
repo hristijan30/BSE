@@ -1,80 +1,31 @@
 #include "Material.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "../STB/stb_image.h"
+#include <fstream>
+#include <sstream>
+#include <iostream>
 
 namespace BSE
 {
-    Texture2D::Texture2D(const std::string& path, bool srgb)
+    bool Material::LoadFromFile(const std::string& filepath)
     {
-        LoadFromFile(path, srgb);
-    }
-
-    Texture2D::~Texture2D()
-    {
-        if (m_id != 0)
-            glDeleteTextures(1, &m_id);
-    }
-
-    bool Texture2D::LoadFromFile(const std::string& path, bool srgb)
-    {
-        if (m_id != 0) {
-            glDeleteTextures(1, &m_id);
-            m_id = 0;
-        }
-
-        int channels;
-        stbi_set_flip_vertically_on_load(true);
-        unsigned char* data = stbi_load(path.c_str(), &m_width, &m_height, &channels, 0);
-        if (!data)
-        {
-            std::cerr << "[Texture2D] Failed to load: " << path << std::endl;
+        if (!parseMaterialFileInternal(filepath))
             return false;
-        }
 
-        GLenum format = GL_RGB;
-        if (channels == 1) format = GL_RED;
-        else if (channels == 3) format = srgb ? GL_SRGB : GL_RGB;
-        else if (channels == 4) format = srgb ? GL_SRGB_ALPHA : GL_RGBA;
+        if (!diffusePath.empty()) m_diffuse = std::make_unique<Texture2D>(diffusePath, true);
+        if (!normalPath.empty()) m_normal = std::make_unique<Texture2D>(normalPath, false);
+        if (!roughnessPath.empty()) m_roughness = std::make_unique<Texture2D>(roughnessPath, false);
+        if (!metallicPath.empty()) m_metallic = std::make_unique<Texture2D>(metallicPath, false);
+        if (!aoPath.empty()) m_ao = std::make_unique<Texture2D>(aoPath, false);
+        if (!emissivePath.empty()) m_emissive = std::make_unique<Texture2D>(emissivePath, false);
 
-        glGenTextures(1, &m_id);
-        glBindTexture(GL_TEXTURE_2D, m_id);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0,
-                     (channels == 4) ? GL_RGBA : GL_RGB, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-
-        stbi_image_free(data);
-        m_loaded = true;
         return true;
     }
 
-    void Texture2D::Bind(GLuint slot) const
+    bool Material::ParseMaterialFile(const std::string& filepath)
     {
-        if (m_loaded)
-        {
-            glActiveTexture(GL_TEXTURE0 + slot);
-            glBindTexture(GL_TEXTURE_2D, m_id);
-        }
+        return parseMaterialFileInternal(filepath);
     }
 
-    void Texture2D::Unbind() const
-    {
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-
-    bool Material::LoadFromFile(const std::string& filepath)
-    {
-        return parseMaterialFile(filepath);
-    }
-
-    bool Material::parseMaterialFile(const std::string& filepath)
+    bool Material::parseMaterialFileInternal(const std::string& filepath)
     {
         std::ifstream file(filepath);
         if (!file.is_open())
@@ -89,42 +40,65 @@ namespace BSE
             if (line.empty() || line[0] == '#') continue;
 
             std::istringstream iss(line);
-            std::string key, value;
-            if (!(iss >> key >> value)) continue;
+            std::string key;
+            if (!(iss >> key)) continue;
 
-            if (key == "diffuse" && value != "null")
-                m_diffuse = std::make_unique<Texture2D>(value, true);
-            else if (key == "normal" && value != "null")
-                m_normal = std::make_unique<Texture2D>(value, false);
-            else if (key == "roughness" && value != "null")
-                m_roughness = std::make_unique<Texture2D>(value, false);
-            else if (key == "metallic" && value != "null")
-                m_metallic = std::make_unique<Texture2D>(value, false);
-            else if (key == "ao" && value != "null")
-                m_ao = std::make_unique<Texture2D>(value, false);
-            else if (key == "emissive" && value != "null")
-                m_emissive = std::make_unique<Texture2D>(value, false);
-            else if (key == "BaseColor")
-                iss >> BaseColor.r >> BaseColor.g >> BaseColor.b;
-            else if (key == "EmissionColor")
-                iss >> EmissionColor.r >> EmissionColor.g >> EmissionColor.b;
-            else if (key == "Metallic")
-                Metallic = std::stof(value);
-            else if (key == "Roughness")
-                Roughness = std::stof(value);
-            else if (key == "Transparency")
-                Transparency = std::stof(value);
-            else if (key == "EmissionStrength")
-                EmissionStrength = std::stof(value);
-            else if (key == "SpecularStrength")
-                SpecularStrength = std::stof(value);
+            if (key == "diffuse") { iss >> diffusePath; if (diffusePath == "null") diffusePath.clear(); }
+            else if (key == "normal") { iss >> normalPath; if (normalPath == "null") normalPath.clear(); }
+            else if (key == "roughness") { iss >> roughnessPath; if (roughnessPath == "null") roughnessPath.clear(); }
+            else if (key == "metallic") { iss >> metallicPath; if (metallicPath == "null") metallicPath.clear(); }
+            else if (key == "ao") { iss >> aoPath; if (aoPath == "null") aoPath.clear(); }
+            else if (key == "emissive") { iss >> emissivePath; if (emissivePath == "null") emissivePath.clear(); }
+            else if (key == "BaseColor") { iss >> BaseColor.r >> BaseColor.g >> BaseColor.b; }
+            else if (key == "EmissionColor") { iss >> EmissionColor.r >> EmissionColor.g >> EmissionColor.b; }
+            else if (key == "Metallic") { iss >> Metallic; }
+            else if (key == "Roughness") { iss >> Roughness; }
+            else if (key == "Transparency") { iss >> Transparency; }
+            else if (key == "EmissionStrength") { iss >> EmissionStrength; }
+            else if (key == "SpecularStrength") { iss >> SpecularStrength; }
         }
 
         return true;
     }
 
+    void Material::FinalizeTexturesFromImageData(const std::unordered_map<std::string, ImageData>& images)
+    {
+        auto findAndCreate = [&](const std::string& path, std::unique_ptr<Texture2D>& slot, bool srgb)
+        {
+            if (path.empty()) return;
+            auto it = images.find(path);
+            if (it != images.end())
+            {
+                slot = std::make_unique<Texture2D>();
+                if (!slot->CreateFromImageData(it->second, srgb))
+                {
+                    std::cerr << "[Material] Failed to CreateFromImageData for: " << path << std::endl;
+                    slot.reset();
+                }
+            }
+            else
+            {
+                slot = std::make_unique<Texture2D>();
+                if (!slot->LoadFromFile(path, srgb))
+                {
+                    std::cerr << "[Material] Fallback LoadFromFile failed for: " << path << std::endl;
+                    slot.reset();
+                }
+            }
+        };
+
+        findAndCreate(diffusePath, m_diffuse, true);
+        findAndCreate(normalPath, m_normal, false);
+        findAndCreate(roughnessPath, m_roughness, false);
+        findAndCreate(metallicPath, m_metallic, false);
+        findAndCreate(aoPath, m_ao, false);
+        findAndCreate(emissivePath, m_emissive, false);
+    }
+
     void Material::Bind(GLuint shaderProgram) const
     {
+        if (shaderProgram == 0) return;
+
         glUseProgram(shaderProgram);
 
         GLint loc;
