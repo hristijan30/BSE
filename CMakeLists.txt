@@ -12,6 +12,7 @@ find_package(OpenGL REQUIRED)
 find_package(SDL3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
+find_package(OpenAL REQUIRED)
 #find_package(Vulkan REQUIRED) ---> Will use in future
 
 add_executable(TEST_WINDOW WIN32 "Test/WindowMain.cpp")
