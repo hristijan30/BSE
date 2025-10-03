@@ -9,6 +9,6 @@
 | Platform | In-Development | Finished |
 |----------|----------------|----------|
 | **Windows** | Active | Worked on |
-| **Linux**   | Inactive | Paused    |
+| **Linux**   | Active | Worked on    |
 
 ---

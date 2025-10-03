@@ -14,7 +14,7 @@ namespace BSE
         SoundBuffer();
         ~SoundBuffer();
 
-        bool LoadFromFile(const std::string& filepath);  // e.g. WAV, OGG
+        bool LoadFromFile(const std::string& filepath);
         void SetData(const void* data, ALsizei size, ALsizei freq, ALenum format);
 
         ALuint GetID() const { return m_buffer; }
