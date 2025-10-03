@@ -19,6 +19,9 @@ namespace BSE
         Node* GetParent() const { return m_parent; }
         const std::string& GetName() const { return m_name; }
 
+        virtual void Update(float tick) {}
+        virtual void Render(float alpha) {}
+
     protected:
         std::string m_name;
         Node* m_parent = nullptr;

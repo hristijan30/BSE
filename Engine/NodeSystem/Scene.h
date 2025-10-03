@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Node.h"
-#include <string>
 
 namespace BSE
 {
@@ -10,5 +9,8 @@ namespace BSE
     public:
         Scene(const std::string& name = "Scene");
         ~Scene();
+
+        void UpdateAll(float tick);
+        void RenderAll(float alpha);
     };
 }
