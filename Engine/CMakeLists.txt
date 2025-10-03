@@ -1,5 +1,8 @@
 
 set(SOURCES
+    "Input/InputManager.cpp"
+    "Input/InputManager.h"
+    "Input/Key.h"
     "NodeSystem/Node.cpp"
     "NodeSystem/Node.h"
     "NodeSystem/NodeManager.cpp"
