@@ -7,6 +7,7 @@
 #include <sstream>
 
 #include <functional>
+#include <algorithm>
 
 #include <fstream>
 
