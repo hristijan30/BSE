@@ -14,7 +14,7 @@ namespace BSE
     class DLL_EXPORT FileStreamingSystem
     {
     public:
-        FileStreamingSystem() = default;
+        explicit FileStreamingSystem(ThreadingSystem& threadSystem);
         ~FileStreamingSystem() = default;
 
         void LoadModelAsync(const std::string& filepath, const std::function<void(std::shared_ptr<ModelLoader>)>& callback);
@@ -24,7 +24,7 @@ namespace BSE
         void Update();
 
     private:
-        ThreadingSystem m_threadSystem;
+        ThreadingSystem& m_threadSystem;
         std::mutex m_queueMutex;
 
         struct QueuedTask

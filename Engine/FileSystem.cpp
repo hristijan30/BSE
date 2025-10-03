@@ -2,6 +2,10 @@
 
 namespace BSE
 {
+    FileStreamingSystem::FileStreamingSystem(ThreadingSystem& threadSystem)
+        : m_threadSystem(threadSystem)
+    {}
+
     void FileStreamingSystem::LoadModelAsync(const std::string& filepath, const std::function<void(std::shared_ptr<ModelLoader>)>& callback)
     {
         m_threadSystem.SubmitTask([this, filepath, callback]()
