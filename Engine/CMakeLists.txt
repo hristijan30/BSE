@@ -1,10 +1,21 @@
 
 set(SOURCES
+    "NodeSystem/Node.cpp"
+    "NodeSystem/Node.h"
+    "NodeSystem/NodeManager.cpp"
+    "NodeSystem/NodeManager.h"
+    "NodeSystem/Scene.cpp"
+    "NodeSystem/Scene.h"
     "Renderer/OpenGL.h"
+    "Renderer/Model.cpp"
+    "Renderer/Model.h"
+    "Renderer/Material.cpp"
+    "Renderer/Material.h"
     "Renderer/Shader.cpp"
     "Renderer/Shader.h"
     "Renderer/Camera.cpp"
     "Renderer/Camera.h"
+    "STB/stb_image.h"
     "Sound/Sound.cpp"
     "Sound/Sound.h"
     "Sound/SoundManager.cpp"
@@ -15,6 +26,8 @@ set(SOURCES
     "SDL_Include.h"
     "Engine.cpp"
     "Engine.h"
+    "FileSystem.cpp"
+    "FileSystem.h"
     "Logger.cpp"
     "Logger.h"
     "Time.cpp"
@@ -25,4 +38,4 @@ set(SOURCES
 
 add_library(BSE_Core SHARED "${SOURCES}")
 
-target_link_libraries(BSE_Core PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb)
+target_link_libraries(BSE_Core PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL)
