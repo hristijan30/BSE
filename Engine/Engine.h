@@ -7,7 +7,7 @@ namespace BSE
     class DLL_EXPORT Engine
     {
     public:
-        Engine() {}
+        Engine() = default;
 
         void DetectFrameAndTickRates(BSE::Time& time);
 

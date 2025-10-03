@@ -10,7 +10,7 @@ namespace BSE
     class DLL_EXPORT ThreadingSystem
     {
     public:
-        ThreadingSystem() = delete;
+        ThreadingSystem() = default;
         ~ThreadingSystem();
         
         template<typename Func>

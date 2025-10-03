@@ -8,7 +8,7 @@ namespace BSE
     class DLL_EXPORT Logger
     {
     public:
-        Logger() = delete;
+        Logger() = default;
 
         static void Initialize(const std::string& filename);
         static void LogMessage(const std::string& text);
