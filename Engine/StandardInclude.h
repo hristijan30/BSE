@@ -18,3 +18,5 @@
 
 #include <array>
 #include <vector>
+
+#include <atomic>

@@ -895,3 +895,68 @@ Manages input state for keyboard and mouse.
 - Tracks current and previous states for keys and mouse buttons to detect presses and releases.  
 - `Update()` must be called each frame to refresh input states.  
 - Provides both absolute mouse position and delta movement for camera or UI control.
+
+# WindowEvents.h
+
+**Namespace:** `BSE`  
+**Header file path:** `Events/WindowEvents.h`  
+
+## Overview
+This header provides window-related events and an SDL event manager. It allows subscribing to window events such as resize, focus changes, and close, and dispatching them to callbacks.
+
+## Enums
+
+### `WindowEventType`
+
+Specifies the type of window event.
+
+| Enum Value | Description |
+|------------|-------------|
+| `None` | No event. |
+| `Close` | Window close event. |
+| `Resize` | Window resize event. |
+| `FocusGained` | Window gained focus. |
+| `FocusLost` | Window lost focus. |
+| `Minimized` | Window minimized. |
+| `Maximized` | Window maximized. |
+| `Restored` | Window restored from minimized/maximized state. |
+| `Moved` | Window moved to a new position. |
+
+---
+
+## Structs
+
+### `WindowEvent`
+
+Contains data about a window event.
+
+| Attribute | Description |
+|-----------|-------------|
+| `WindowEventType type` | Type of the event. |
+| `int width` | New width of the window (for resize events). |
+| `int height` | New height of the window (for resize events). |
+| `int x` | X position of the window (for move events). |
+| `int y` | Y position of the window (for move events). |
+
+---
+
+## Classes
+
+### `SDLEventManager`
+
+Manages subscription and dispatch of window events.
+
+#### Methods
+| Method | Description |
+|--------|-------------|
+| `SDLEventManager()` | Default constructor. |
+| `~SDLEventManager()` | Default destructor. |
+| `size_t Subscribe(WindowEventType type, Callback cb)` | Subscribes a callback to a specific window event type. Returns a token for unsubscribing. |
+| `void Unsubscribe(size_t token)` | Unsubscribes a callback using its token. |
+| `void PollEvents(SDL_Window* window)` | Polls SDL events and dispatches window-related events to subscribed callbacks. |
+| `void ClearAll()` | Clears all subscriptions. |
+
+## Notes
+- `SDLEventManager` supports thread-safe subscription and dispatch using a mutex.  
+- Each subscription receives a unique token for managing callbacks.  
+- Window events include close, resize, focus changes, minimize/maximize, restore, and move events.

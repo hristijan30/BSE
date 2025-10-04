@@ -1,5 +1,7 @@
 
 set(SOURCES
+    "Events/WindowEvent.cpp"
+    "Events/WindowEvent.h"
     "Input/InputManager.cpp"
     "Input/InputManager.h"
     "Input/Key.h"
