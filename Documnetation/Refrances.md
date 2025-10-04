@@ -132,15 +132,11 @@ The `FileStreamingSystem` class provides asynchronous and synchronous loading of
 
 ### `FileStreamingSystem`
 
-#### Constructor / Destructor
+#### Asynchronous Loading
 | Method | Description |
 |--------|-------------|
 | `explicit FileStreamingSystem(ThreadingSystem& threadSystem)` | Creates a new file streaming system, using the provided `ThreadingSystem` for asynchronous tasks. |
 | `~FileStreamingSystem()` | Destructor. Cleans up any remaining resources. |
-
-#### Asynchronous Loading
-| Method | Description |
-|--------|-------------|
 | `void LoadModelAsync(const std::string& id, const std::string& filepath, const std::function<void(ModelPtr)>& callback)` | Loads a model asynchronously and calls the callback with the loaded `ModelPtr`. |
 | `void LoadMaterialAsync(const std::string& id, const std::string& filepath, const std::function<void(MaterialPtr)>& callback)` | Loads a material asynchronously and calls the callback with the loaded `MaterialPtr`. |
 | `void LoadSoundAsync(const std::string& id, const std::string& filepath, const std::function<void(SoundPtr)>& callback)` | Loads a sound asynchronously and calls the callback with the loaded `SoundPtr`. |
