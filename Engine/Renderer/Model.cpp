@@ -38,7 +38,8 @@ namespace BSE
             uint16_t len = 0;
             file.read(reinterpret_cast<char*>(&len), sizeof(uint16_t));
             std::string s(len, '\0');
-            file.read(s.data(), len);
+            if (len > 0)
+                file.read(&s[0], len);
             return s;
         };
 
@@ -67,7 +68,8 @@ namespace BSE
                 file.read(reinterpret_cast<char*>(&mesh.uvs[v]), sizeof(glm::vec2));
             }
 
-            file.read(reinterpret_cast<char*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
+            if (indexCount > 0)
+                file.read(reinterpret_cast<char*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
         }
 
         file.close();
@@ -87,7 +89,6 @@ namespace BSE
         {
             RenderMesh rmesh;
             rmesh.indexCount = static_cast<uint32_t>(mesh.indices.size());
-            rmesh.transform = mesh.transform;
 
             glGenVertexArrays(1, &rmesh.VAO);
             glGenBuffers(1, &rmesh.VBO);
@@ -96,18 +97,23 @@ namespace BSE
             glBindVertexArray(rmesh.VAO);
 
             std::vector<float> vertexData;
+            vertexData.reserve(mesh.positions.size() * 8);
             for (size_t i = 0; i < mesh.positions.size(); ++i)
             {
-                vertexData.push_back(mesh.positions[i].x);
-                vertexData.push_back(mesh.positions[i].y);
-                vertexData.push_back(mesh.positions[i].z);
+                const glm::vec3& p = mesh.positions[i];
+                const glm::vec3& n = (i < mesh.normals.size()) ? mesh.normals[i] : glm::vec3(0.0f, 1.0f, 0.0f);
+                const glm::vec2& uv = (i < mesh.uvs.size()) ? mesh.uvs[i] : glm::vec2(0.0f, 0.0f);
 
-                vertexData.push_back(mesh.normals[i].x);
-                vertexData.push_back(mesh.normals[i].y);
-                vertexData.push_back(mesh.normals[i].z);
+                vertexData.push_back(p.x);
+                vertexData.push_back(p.y);
+                vertexData.push_back(p.z);
 
-                vertexData.push_back(mesh.uvs[i].x);
-                vertexData.push_back(mesh.uvs[i].y);
+                vertexData.push_back(n.x);
+                vertexData.push_back(n.y);
+                vertexData.push_back(n.z);
+
+                vertexData.push_back(uv.x);
+                vertexData.push_back(uv.y);
             }
 
             glBindBuffer(GL_ARRAY_BUFFER, rmesh.VBO);
@@ -116,16 +122,20 @@ namespace BSE
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, rmesh.EBO);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh.indices.size() * sizeof(uint32_t), mesh.indices.data(), GL_STATIC_DRAW);
 
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
             glEnableVertexAttribArray(0);
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
             glEnableVertexAttribArray(1);
-            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
             glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
             glBindVertexArray(0);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+            rmesh.transform = mesh.transform;
 
             m_renderMeshes.push_back(rmesh);
         }
@@ -144,6 +154,8 @@ namespace BSE
 
     void ModelRenderer::Render(const std::vector<RenderMesh>& meshes, const glm::mat4& viewProjMatrix, GLuint shaderProgram)
     {
+        if (shaderProgram == 0) return;
+
         glUseProgram(shaderProgram);
 
         GLint loc = glGetUniformLocation(shaderProgram, "uMVP");
@@ -151,7 +163,8 @@ namespace BSE
         for (const RenderMesh& mesh : meshes)
         {
             glm::mat4 mvp = viewProjMatrix * mesh.transform;
-            glUniformMatrix4fv(loc, 1, GL_FALSE, &mvp[0][0]);
+            if (loc >= 0)
+                glUniformMatrix4fv(loc, 1, GL_FALSE, &mvp[0][0]);
 
             glBindVertexArray(mesh.VAO);
             glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr);
@@ -159,5 +172,95 @@ namespace BSE
         }
 
         glUseProgram(0);
+    }
+
+    bool Model::LoadFromFile(const std::string& filepath)
+    {
+        Unload();
+
+        if (!m_loader.Load(filepath))
+        {
+            return false;
+        }
+
+        const auto& meshes = m_loader.GetMeshes();
+        m_processor.Process(meshes);
+
+        UpdateRenderTransforms();
+
+        return true;
+    }
+
+    void Model::Unload()
+    {
+        m_processor.Release();
+        m_loader.Unload();
+    }
+
+    void Model::SetMeshPosition(size_t meshIndex, const glm::vec3& pos)
+    {
+        auto& meshes = m_loader.GetMeshesMutable();
+        if (meshIndex >= meshes.size()) return;
+        meshes[meshIndex].Position = pos;
+        UpdateRenderTransforms();
+    }
+
+    void Model::TranslateMesh(size_t meshIndex, const glm::vec3& delta)
+    {
+        auto& meshes = m_loader.GetMeshesMutable();
+        if (meshIndex >= meshes.size()) return;
+        meshes[meshIndex].Position += delta;
+        UpdateRenderTransforms();
+    }
+
+    void Model::SetMeshRotation(size_t meshIndex, const glm::quat& rot)
+    {
+        auto& meshes = m_loader.GetMeshesMutable();
+        if (meshIndex >= meshes.size()) return;
+        meshes[meshIndex].Rotation = rot;
+        UpdateRenderTransforms();
+    }
+
+    void Model::RotateMesh(size_t meshIndex, const glm::quat& delta)
+    {
+        auto& meshes = m_loader.GetMeshesMutable();
+        if (meshIndex >= meshes.size()) return;
+        meshes[meshIndex].Rotation = glm::normalize(delta * meshes[meshIndex].Rotation);
+        UpdateRenderTransforms();
+    }
+
+    void Model::SetMeshScale(size_t meshIndex, const glm::vec3& scale)
+    {
+        auto& meshes = m_loader.GetMeshesMutable();
+        if (meshIndex >= meshes.size()) return;
+        meshes[meshIndex].Scale = scale;
+        UpdateRenderTransforms();
+    }
+
+    void Model::RescaleMesh(size_t meshIndex, const glm::vec3& factor)
+    {
+        auto& meshes = m_loader.GetMeshesMutable();
+        if (meshIndex >= meshes.size()) return;
+        meshes[meshIndex].Scale *= factor;
+        UpdateRenderTransforms();
+    }
+
+    void Model::UpdateRenderTransforms()
+    {
+        glm::mat4 modelTRS = GetModelTRSMatrix();
+
+        const auto& meshes = m_loader.GetMeshes();
+        auto& rmeshes = m_processor.GetRenderMeshesMutable();
+
+        size_t count = std::min(meshes.size(), rmeshes.size());
+        for (size_t i = 0; i < count; ++i)
+        {
+            rmeshes[i].transform = meshes[i].GetFinalTransform(modelTRS);
+        }
+    }
+
+    void Model::Render(ModelRenderer& renderer, const glm::mat4& viewProjMatrix, GLuint shaderProgram)
+    {
+        renderer.Render(m_processor.GetRenderMeshes(), viewProjMatrix, shaderProgram);
     }
 }
