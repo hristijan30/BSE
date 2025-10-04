@@ -35,6 +35,20 @@ namespace BSE
         }
     }
 
+    std::vector<std::shared_ptr<Node>> Node::GetAllDescendants() const
+    {
+        std::vector<std::shared_ptr<Node>> descendants;
+
+        for (const auto& child : m_children)
+        {
+            descendants.push_back(child);
+            auto childDescendants = child->GetAllDescendants();
+            descendants.insert(descendants.end(), childDescendants.begin(), childDescendants.end());
+        }
+
+        return descendants;
+    }
+
     void Node::AddChild(std::shared_ptr<Node> child)
     {
         if (!child) return;

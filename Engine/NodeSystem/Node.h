@@ -19,6 +19,8 @@ namespace BSE
         Node* GetParent() const { return m_parent; }
         const std::string& GetName() const { return m_name; }
 
+        std::vector<std::shared_ptr<Node>> GetAllDescendants() const;
+
         virtual void Update(float tick) {}
         virtual void Render(float alpha) {}
 

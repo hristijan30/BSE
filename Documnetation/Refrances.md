@@ -739,6 +739,7 @@ Represents a single node in a scene graph hierarchy.
 | `const std::vector<std::shared_ptr<Node>>& GetChildren() const` | Returns a list of the node's children. |
 | `Node* GetParent() const` | Returns the parent node. |
 | `const std::string& GetName() const` | Returns the node's name. |
+| `std::vector<std::shared_ptr<Node>> GetAllDescendants() const;` | Gets children from the children of the current Node. |
 | `virtual void Update(float tick)` | Called every tick to update the node; can be overridden. |
 | `virtual void Render(float alpha)` | Called during rendering; can be overridden. |
 
