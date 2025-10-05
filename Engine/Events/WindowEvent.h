@@ -39,7 +39,7 @@ namespace BSE
         size_t Subscribe(WindowEventType type, Callback cb);
         void Unsubscribe(size_t token);
 
-        void PollEvents(SDL_Window* window, bool running);
+        void PollEvents(SDL_Window* window, bool &running);
         void ClearAll();
 
     private:

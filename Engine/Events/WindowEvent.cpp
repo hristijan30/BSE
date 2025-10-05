@@ -63,7 +63,7 @@ namespace BSE
         }
     }
 
-    void SDLEventManager::PollEvents(SDL_Window* window, bool running)
+    void SDLEventManager::PollEvents(SDL_Window* window, bool &running)
     {
         SDL_Event e;
         while (SDL_PollEvent(&e))
