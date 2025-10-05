@@ -156,8 +156,6 @@ namespace BSE
     {
         if (shaderProgram == 0) return;
 
-        glUseProgram(shaderProgram);
-
         GLint loc = glGetUniformLocation(shaderProgram, "uMVP");
 
         for (const RenderMesh& mesh : meshes)
@@ -170,8 +168,6 @@ namespace BSE
             glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr);
             glBindVertexArray(0);
         }
-
-        glUseProgram(0);
     }
 
     bool Model::LoadFromFile(const std::string& filepath)

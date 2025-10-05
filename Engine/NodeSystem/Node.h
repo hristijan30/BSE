@@ -22,7 +22,7 @@ namespace BSE
         std::vector<std::shared_ptr<Node>> GetAllDescendants() const;
 
         virtual void Update(float tick) {}
-        virtual void Render(float alpha) {}
+        virtual void Render(double alpha) {}
 
     protected:
         std::string m_name;

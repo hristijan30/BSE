@@ -99,8 +99,6 @@ namespace BSE
     {
         if (shaderProgram == 0) return;
 
-        glUseProgram(shaderProgram);
-
         GLint loc;
         loc = glGetUniformLocation(shaderProgram, "u_BaseColor");
         if (loc >= 0) glUniform3fv(loc, 1, &BaseColor[0]);
