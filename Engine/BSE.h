@@ -1,5 +1,8 @@
 #pragma once
 
+// Events
+#include "Events/WindowEvent.h"
+
 // Input
 #include "Input/InputManager.h"
 #include "Input/Key.h"
