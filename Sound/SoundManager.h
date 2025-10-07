@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Define.h"
-#include "../StandardInclude.h"
+#include "../Engine/Define.h"
+#include "../Engine/StandardInclude.h"
 
 #include "../Renderer/OpenGL.h"
 #include "OpenAL.h"

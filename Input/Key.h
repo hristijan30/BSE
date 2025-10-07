@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../Define.h"
-#include "../StandardInclude.h"
-#include "../SDL_Include.h"
+#include "../Engine/Define.h"
+#include "../Engine/StandardInclude.h"
+#include "../Engine/SDL_Include.h"
 
 namespace BSE
 {

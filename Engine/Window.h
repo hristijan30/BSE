@@ -3,7 +3,7 @@
 #include "Define.h"
 #include "StandardInclude.h"
 
-#include "Renderer/OpenGL.h"
+#include "../Renderer/OpenGL.h"
 #include "SDL_Include.h"
 
 namespace BSE

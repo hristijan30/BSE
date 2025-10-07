@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../Define.h"
-#include "../StandardInclude.h"
+#include "../Engine/Define.h"
+#include "../Engine/StandardInclude.h"
 #include "OpenGL.h"
 
-#include "../Time.h"
+#include "../Engine/Time.h"
 
 namespace BSE
 {

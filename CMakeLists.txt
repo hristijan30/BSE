@@ -13,12 +13,76 @@ find_package(SDL3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
-#find_package(Vulkan REQUIRED) ---> Will use in future
 
-add_executable(TEST_WINDOW WIN32 "Test/WindowMain.cpp")
-target_link_libraries(TEST_WINDOW PRIVATE BSE_Core)
+set(CORE_SOURCES
+    "Engine/Define.h"
+    "Engine/SDL_Include.h"
+    "Engine/StandardInclude.h"
+    "Engine/Engine.cpp"
+    "Engine/Engine.h"
+    "Engine/Logger.cpp"
+    "Engine/Logger.h"
+    "Engine/Time.cpp"
+    "Engine/Time.h"
+    "Engine/Window.cpp"
+    "Engine/Window.h"
+)
 
-add_executable(STATISTICS_TEST "Test/Statistics.cpp")
-target_link_libraries(STATISTICS_TEST PRIVATE BSE_Core)
+set(EVENT_SOURCE
+    "Events/WindowEvent.cpp"
+    "Events/WindowEvent.h"
+)
 
-add_subdirectory("Engine")
+set(INPUT_SOURCE
+    "Input/Key.h"
+    "Input/InputManager.cpp"
+    "Input/InputManager.h"
+)
+
+set(RENDERER_SOURCE
+    "Renderer/Camera.cpp"
+    "Renderer/Camera.h"
+    "Renderer/Material.cpp"
+    "Renderer/Material.h"
+    "Renderer/Model.cpp"
+    "Renderer/Model.h"
+    "Renderer/Shader.cpp"
+    "Renderer/Shader.h"
+    "Renderer/Texture2D.cpp"
+    "Renderer/Texture2D.h"
+)
+
+set(SOUND_SOURCE
+    "Sound/OpenAL.h"
+    "Sound/Sound.cpp"
+    "Sound/Sound.h"
+    "Sound/SoundManager.cpp"
+    "Sound/SoundManager.h"
+)
+
+set(THREADING_SOURCE
+    "Threading/ThreadingSystem.cpp"
+    "Threading/ThreadingSystem.h"
+)
+
+if(WIN32)
+    add_library(BSE_Engine SHARED
+        "${CORE_SOURCE}"
+        "${EVENT_SOURCE}"
+        "${INPUT_SOURCE}"
+        "${RENDERER_SOURCE}"
+        "${SOUND_SOURCE}"
+        "${THREADING_SOURCE}"
+    )
+else()
+    add_library(BSE_Engine STATIC
+        "${CORE_SOURCE}"
+        "${EVENT_SOURCE}"
+        "${INPUT_SOURCE}"
+        "${RENDERER_SOURCE}"
+        "${SOUND_SOURCE}"
+        "${THREADING_SOURCE}"
+    )
+endif()
+
+target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL)
