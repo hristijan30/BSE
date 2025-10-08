@@ -6,8 +6,15 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <cmath>
+
 #include <functional>
 #include <algorithm>
+
+#include <random>
+#include <limits>
+
+#include <cassert>
 
 #include <fstream>
 
