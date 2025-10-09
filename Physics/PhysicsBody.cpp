@@ -34,6 +34,83 @@ namespace BSE
         for (rp3d::TriangleMesh* tm : m_triangleMeshes) delete tm;
     }
 
+    rp3d::Collider* PhysicsBody::AddConcaveMeshCollider(const MeshData& mesh, const PhysicsMaterial* material, const glm::mat4& localTransform)
+    {
+        if (!m_physicsCommon || !m_body) return nullptr;
+
+        const size_t vertexCount = mesh.positions.size();
+        const size_t indexCount  = mesh.indices.size();
+        if (vertexCount == 0 || indexCount < 3) return nullptr;
+
+        const size_t triangleCount = indexCount / 3;
+        if (triangleCount == 0) return nullptr;
+
+        std::vector<float> verts;
+        verts.reserve(vertexCount * 3);
+        for (const auto& v : mesh.positions)
+        {
+            verts.push_back(v.x);
+            verts.push_back(v.y);
+            verts.push_back(v.z);
+        }
+
+        std::vector<int> inds;
+        inds.reserve(indexCount);
+        for (uint32_t i : mesh.indices) inds.push_back(static_cast<int>(i));
+
+        rp3d::TriangleVertexArray triangleArray(
+            static_cast<rp3d::uint32>(vertexCount),
+            verts.data(),
+            static_cast<rp3d::uint32>(3 * sizeof(float)),
+            static_cast<rp3d::uint32>(triangleCount),
+            inds.data(),
+            static_cast<rp3d::uint32>(3 * sizeof(int)),
+            rp3d::TriangleVertexArray::VertexDataType::VERTEX_FLOAT_TYPE,
+            rp3d::TriangleVertexArray::IndexDataType::INDEX_INTEGER_TYPE
+        );
+
+        std::vector<rp3d::Message> messages;
+        rp3d::TriangleMesh* triMesh = m_physicsCommon->createTriangleMesh(triangleArray, messages);
+
+        if (!messages.empty())
+        {
+            for (const auto& msg : messages)
+            {
+                std::cerr << msg.text << std::endl;
+            }
+        }
+
+        if (!triMesh)
+        {
+            return nullptr;
+        }
+
+        m_triangleMeshes.push_back(triMesh);
+
+        rp3d::ConcaveMeshShape* concaveShape = m_physicsCommon->createConcaveMeshShape(triMesh);
+        if (!concaveShape)
+        {
+            m_physicsCommon->destroyTriangleMesh(triMesh);
+            m_triangleMeshes.pop_back();
+            return nullptr;
+        }
+
+        m_collisionShapes.push_back(concaveShape);
+
+        glm::vec3 localPos = glm::vec3(localTransform[3]);
+        glm::quat localRot = glm::quat_cast(localTransform);
+        rp3d::Transform colliderTransform(BSE::glmToRp3d(localPos), BSE::glmToRp3d(localRot));
+
+        rp3d::Collider* collider = m_body->addCollider(concaveShape, colliderTransform);
+
+        if (material && collider)
+        {
+            material->ApplyToCollider(collider);
+        }
+
+        return collider;
+    }
+
     void PhysicsBody::SetTransformFromModel(const Model& model)
     {
         glm::vec3 pos = model.GetPosition();
