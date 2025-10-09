@@ -5,7 +5,6 @@
 
 #include "React.h"
 
-
 namespace BSE
 {
     class DLL_EXPORT PhysicsMaterial
