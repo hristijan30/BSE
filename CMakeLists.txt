@@ -14,6 +14,8 @@ find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
 
+add_subdirectory("ThirdParty/reactphysics3d") # Make sure to clone the reactphysics3D repo in a ThirdParty folder
+
 set(CORE_SOURCES
     "Engine/Define.h"
     "Engine/SDL_Include.h"
@@ -39,7 +41,16 @@ set(INPUT_SOURCE
     "Input/InputManager.h"
 )
 
+set(PHYSICS_SOURCE
+    "Physics/React.h"
+    "Physics/PhysicsMaterial.cpp"
+    "Physics/PhysicsMaterial.h"
+    "Physics/PhysicsBody.cpp"
+    "Physics/PhysicsBody.h"
+)
+
 set(RENDERER_SOURCE
+    "Renderer/OpenGL.h"
     "Renderer/Camera.cpp"
     "Renderer/Camera.h"
     "Renderer/Material.cpp"
@@ -70,6 +81,7 @@ if(WIN32)
         "${CORE_SOURCE}"
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
+        "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
         "${SOUND_SOURCE}"
         "${THREADING_SOURCE}"
@@ -79,10 +91,11 @@ else()
         "${CORE_SOURCE}"
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
+        "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
         "${SOUND_SOURCE}"
         "${THREADING_SOURCE}"
     )
 endif()
 
-target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL)
+target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL reactphysics3d)
