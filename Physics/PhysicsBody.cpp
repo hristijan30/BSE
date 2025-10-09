@@ -14,31 +14,55 @@ namespace BSE
     {
         if (m_world && m_body)
         {
-        m_world->destroyRigidBody(m_body);
-        m_body = nullptr;
-    }
+            m_world->destroyRigidBody(m_body);
+            m_body = nullptr;
+        }
 
         if (m_physicsCommon)
         {
             for (rp3d::CollisionShape* shape : m_collisionShapes)
             {
                 if (!shape) continue;
+
                 if (auto concave = dynamic_cast<rp3d::ConcaveMeshShape*>(shape))
                 {
                     m_physicsCommon->destroyConcaveMeshShape(concave);
                 }
+                else if (auto convexMesh = dynamic_cast<rp3d::ConvexMeshShape*>(shape))
+                {
+                    m_physicsCommon->destroyConvexMeshShape(convexMesh);
+                }
+                else if (auto box = dynamic_cast<rp3d::BoxShape*>(shape))
+                {
+                    m_physicsCommon->destroyBoxShape(box);
+                }
+                else if (auto sphere = dynamic_cast<rp3d::SphereShape*>(shape))
+                {
+                    m_physicsCommon->destroySphereShape(sphere);
+                }
+                else if (auto capsule = dynamic_cast<rp3d::CapsuleShape*>(shape))
+                {
+                    m_physicsCommon->destroyCapsuleShape(capsule);
+                }
             }
             m_collisionShapes.clear();
 
-            for (rp3d::TriangleMesh* tm : m_triangleMeshes)
-            {
-                if (tm) m_physicsCommon->destroyTriangleMesh(tm);
+            for (rp3d::TriangleMesh* tm : m_triangleMeshes) {
+                if (tm) {
+                    m_physicsCommon->destroyTriangleMesh(tm);
+                }
             }
             m_triangleMeshes.clear();
         }
 
-        for (rp3d::TriangleVertexArray* tva : m_triangleVertexArrays) delete tva;
-        for (rp3d::TriangleMesh* tm : m_triangleMeshes) delete tm;
+        m_ownedVertexBuffers.clear();
+        m_ownedIndexBuffers.clear();
+
+        for (rp3d::TriangleVertexArray* tva : m_triangleVertexArrays)
+        {
+            delete tva;
+        }
+        m_triangleVertexArrays.clear();
     }
 
     rp3d::Collider* PhysicsBody::AddConcaveMeshCollider(const MeshData& mesh, const PhysicsMaterial* material, const glm::mat4& localTransform)
