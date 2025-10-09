@@ -14,9 +14,9 @@ namespace BSE
     {
         if (m_world && m_body)
         {
-            m_world->destroyRigidBody(m_body);
-            m_body = nullptr;
-        }
+        m_world->destroyRigidBody(m_body);
+        m_body = nullptr;
+    }
 
         if (m_physicsCommon)
         {
@@ -28,6 +28,13 @@ namespace BSE
                     m_physicsCommon->destroyConcaveMeshShape(concave);
                 }
             }
+            m_collisionShapes.clear();
+
+            for (rp3d::TriangleMesh* tm : m_triangleMeshes)
+            {
+                if (tm) m_physicsCommon->destroyTriangleMesh(tm);
+            }
+            m_triangleMeshes.clear();
         }
 
         for (rp3d::TriangleVertexArray* tva : m_triangleVertexArrays) delete tva;
