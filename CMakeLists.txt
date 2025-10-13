@@ -16,7 +16,7 @@ find_package(OpenAL REQUIRED)
 
 add_subdirectory("ThirdParty/reactphysics3d") # Make sure to clone the reactphysics3D repo in a ThirdParty folder
 
-set(CORE_SOURCES
+set(CORE_SOURCE
     "Engine/Define.h"
     "Engine/SDL_Include.h"
     "Engine/StandardInclude.h"
