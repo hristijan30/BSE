@@ -1,109 +1,203 @@
-# Run in blender to get your mesh and provide a name for it at the OUTPATH variable
 import bpy
 import struct
-import os
 
-# ---------- CONFIG ----------
-OUTPATH = bpy.path.abspath("//MeshNameHere.mesh")
-FORMAT_VERSION = 1
-# ---------- END CONFIG ----------
+bl_info = {
+    "name": "Export BMESH (.mesh)",
+    "author": "KikoMira",
+    "version": (1, 2),
+    "blender": (2, 80, 0),
+    "location": "File > Export > BMESH (.mesh)",
+    "category": "Import-Export",
+}
 
-def write_string(f, s):
-    b = s.encode('utf-8')
-    f.write(struct.pack('<H', len(b)))
-    f.write(b)
+def get_evaluated_mesh(obj, depsgraph):
+    """Try several to_mesh() signatures across Blender versions."""
+    eval_obj = obj.evaluated_get(depsgraph)
+    for attempt in (
+        lambda o: o.to_mesh(),
+        lambda o: o.to_mesh(depsgraph),
+        lambda o: o.to_mesh(preserve_all_data_layers=True, depsgraph=depsgraph),
+    ):
+        try:
+            mesh = attempt(eval_obj)
+            if mesh is not None:
+                return eval_obj, mesh
+        except TypeError:
+            continue
+        except Exception:
+            continue
+    try:
+        mesh = eval_obj.to_mesh()
+        return eval_obj, mesh
+    except Exception:
+        return eval_obj, None
 
-def export_all_meshes(outpath):
+def safe_free_eval_mesh(eval_obj, mesh):
+    """Cleanup evaluated mesh in a way compatible across versions."""
+    try:
+        eval_obj.to_mesh_clear()
+    except Exception:
+        try:
+            if mesh is not None:
+                mesh.free()
+        except Exception:
+            pass
+
+def write_mesh(filepath, obj, auto_unwrap=False):
     depsgraph = bpy.context.evaluated_depsgraph_get()
-    meshes_exported = 0
+    eval_obj, mesh = get_evaluated_mesh(obj, depsgraph)
+    if mesh is None:
+        print("Failed to obtain evaluated mesh for object:", obj.name)
+        return
 
-    objs = [o for o in bpy.data.objects if o.type == 'MESH']
+    if hasattr(mesh, "calc_loop_triangles"):
+        mesh.calc_loop_triangles()
 
-    with open(outpath, 'wb') as f:
-        f.write(b'BMESH\x00')
-        f.write(struct.pack('<B', FORMAT_VERSION))
-        f.write(struct.pack('<I', len(objs)))
+    if hasattr(mesh, "calc_normals"):
+        mesh.calc_normals()
 
-        for obj in objs:
-            # Evaluate object to get modifiers/applied geometry
-            eval_obj = obj.evaluated_get(depsgraph)
-            mesh = eval_obj.to_mesh()
-            if mesh is None:
-                print(f"Skipping {obj.name}: no mesh produced by evaluation.")
-                continue
+    if auto_unwrap and (not mesh.uv_layers):
+        try:
+            bpy.ops.object.mode_set(mode='OBJECT')
+            pass
+        except Exception:
+            pass
 
-            mesh.calc_loop_triangles()
-            mesh.calc_normals_split()
+    uv_layer = mesh.uv_layers.active
+    has_uvs = uv_layer is not None
 
-            uv_layer = None
-            if mesh.uv_layers.active:
-                uv_layer = mesh.uv_layers.active.data
+    vertex_map = {}
+    positions = []
+    normals = []
+    uvs = []
+    indices = []
+    next_idx = 0
 
-            loop_to_vtx_index = {}
-            out_vertices = []
-            out_indices = []
+    if not hasattr(mesh, "loop_triangles"):
+        print("Mesh has no loop_triangles; aborting export.")
+        safe_free_eval_mesh(eval_obj, mesh)
+        return
 
-            for tri in mesh.loop_triangles:
-                tri_indices = []
-                for li, loop_index in enumerate(tri.loops):
-                    if loop_index in loop_to_vtx_index:
-                        idx = loop_to_vtx_index[loop_index]
-                    else:
-                        loop = mesh.loops[loop_index]
-                        vert = mesh.vertices[loop.vertex_index]
+    for tri in mesh.loop_triangles:
+        tri_ids = []
+        for loop_index in tri.loops:
+            vert_index = mesh.loops[loop_index].vertex_index
+            vert = mesh.vertices[vert_index]
+            pos = vert.co
 
-                        co = vert.co[:]
-                        normal = loop.normal[:]
-                        if uv_layer is not None:
-                            uv = uv_layer[loop_index].uv[:]  # (u, v)
-                        else:
-                            uv = (0.0, 0.0)
-                        idx = len(out_vertices)
-                        out_vertices.append((co, normal, uv))
-                        loop_to_vtx_index[loop_index] = idx
-                    tri_indices.append(idx)
-
-                if len(tri_indices) != 3:
-                    continue
-                out_indices.extend(tri_indices)
-
-            write_string(f, obj.name)
-
-            mat = obj.matrix_world
-            mat_flat = [float(x) for row in mat for x in row]
-            f.write(struct.pack('<16f', *mat_flat))
-
-            vertex_count = len(out_vertices)
-            index_count = len(out_indices)
-
-            f.write(struct.pack('<I', vertex_count))
-            f.write(struct.pack('<I', index_count))
-
-            for (co, normal, uv) in out_vertices:
-                f.write(struct.pack('<3f', *co))
-                f.write(struct.pack('<3f', *normal))
-                f.write(struct.pack('<2f', *uv))
-
-            # Write indices as uint32
-            for idx in out_indices:
-                f.write(struct.pack('<I', idx))
-
-            meshes_exported += 1
-
+            n = None
             try:
-                eval_obj.to_mesh_clear()
-            except AttributeError:
+                loop = mesh.loops[loop_index]
+                if hasattr(loop, "normal"):
+                    n = loop.normal.copy()
+            except Exception:
+                n = None
+
+            if n is None:
                 try:
-                    bpy.data.meshes.remove(mesh)
+                    if hasattr(tri, "normal"):
+                        n = tri.normal.copy()
                 except Exception:
-                    pass
+                    n = None
 
-    print(f"Exported {meshes_exported} mesh object(s) to: {outpath}")
+            if n is None:
+                n = vert.normal.copy()
 
+            # UV
+            if has_uvs:
+                try:
+                    uv = uv_layer.data[loop_index].uv
+                    uv_key = (float(uv.x), float(uv.y))
+                except Exception:
+                    uv_key = (0.0, 0.0)
+            else:
+                uv_key = (0.0, 0.0)
+
+            key = (
+                round(pos.x, 6), round(pos.y, 6), round(pos.z, 6),
+                round(n.x, 6), round(n.y, 6), round(n.z, 6),
+                uv_key[0], uv_key[1]
+            )
+
+            if key not in vertex_map:
+                vertex_map[key] = next_idx
+                positions.append((pos.x, pos.y, pos.z))
+                normals.append((n.x, n.y, n.z))
+                uvs.append(uv_key)
+                next_idx += 1
+
+            tri_ids.append(vertex_map[key])
+
+        indices.extend(tri_ids)
+
+    vertex_count = len(positions)
+    index_count = len(indices)
+
+    with open(filepath, "wb") as f:
+        f.write(b"BMESH")
+        f.write(struct.pack("B", 1))
+        f.write(struct.pack("I", 1))
+
+        name_bytes = obj.name.encode('utf-8')
+        f.write(struct.pack("H", len(name_bytes)))
+        f.write(name_bytes)
+
+        mat = obj.matrix_world
+        for r in range(4):
+            for c in range(4):
+                f.write(struct.pack("f", mat[r][c]))
+
+        f.write(struct.pack("I", vertex_count))
+        f.write(struct.pack("I", index_count))
+
+        for i in range(vertex_count):
+            px, py, pz = positions[i]
+            nx, ny, nz = normals[i]
+            ux, uy = uvs[i]
+            f.write(struct.pack("3f", px, py, pz))
+            f.write(struct.pack("3f", nx, ny, nz))
+            f.write(struct.pack("2f", ux, uy))
+
+        if index_count > 0:
+            f.write(struct.pack(f"{index_count}I", *indices))
+
+    safe_free_eval_mesh(eval_obj, mesh)
+    print(f"Exported '{filepath}' -> {vertex_count} verts, {index_count} indices (UVs: {has_uvs})")
+
+class ExportBMESH_NoSplit(bpy.types.Operator): # Split normal error fixed now
+    """Export BMESH (.mesh) - safe no-split-normals"""
+    bl_idname = "export_scene.bmesh_nosplit"
+    bl_label = "Export BMESH (.mesh)"
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    auto_unwrap: bpy.props.BoolProperty(
+        name="Auto Unwrap (not for evaluated objects)",
+        description="Attempt to create UVs if none exist (best to unwrap in Edit Mode before export)",
+        default=False,
+    )
+
+    def execute(self, context):
+        obj = context.active_object
+        if not obj or obj.type != 'MESH':
+            self.report({'ERROR'}, "Select a mesh object")
+            return {'CANCELLED'}
+        write_mesh(self.filepath, obj, auto_unwrap=self.auto_unwrap)
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+def menu_func_export(self, context):
+    self.layout.operator(ExportBMESH_NoSplit.bl_idname, text="BMESH (.mesh) - safe")
+
+def register():
+    bpy.utils.register_class(ExportBMESH_NoSplit)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+
+def unregister():
+    bpy.utils.unregister_class(ExportBMESH_NoSplit)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
-    odir = os.path.dirname(OUTPATH)
-    if odir and not os.path.exists(odir):
-        os.makedirs(odir, exist_ok=True)
-
-    export_all_meshes(OUTPATH)
+    register()
