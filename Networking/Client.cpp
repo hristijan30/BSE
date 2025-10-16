@@ -1,6 +1,7 @@
 #include "Client.h"
+#include <cstring>
 
-namespace BSE
+namespace BSE 
 {
     using boost::asio::ip::tcp;
 
@@ -14,8 +15,8 @@ namespace BSE
 
     Client::~Client()
     {
-        Disconnect();
         StopIoContext();
+        Disconnect();
     }
 
     void Client::StartIoContext()
@@ -40,8 +41,8 @@ namespace BSE
         m_host = host;
         m_port = port;
 
-        m_connection = std::make_unique<Connection>(m_ioContext);
-        auto self = this;
+        m_connection = std::make_shared<Connection>(m_ioContext);
+        auto selfPtr = m_connection;
 
         m_connection->SetOnMessage([this](uint32_t typeId, const ByteBuffer& payload) {
             OnMessageInternal(typeId, payload);
@@ -55,7 +56,7 @@ namespace BSE
             std::cerr << "Client: connection error: " << ec.message() << std::endl;
         });
 
-        m_connection->AsyncConnect(host, port, [this](const boost::system::error_code& ec) {
+        m_connection->AsyncConnect(host, port, [this, selfPtr](const boost::system::error_code& ec) {
             OnConnectedInternal(ec);
         });
     }
@@ -82,8 +83,12 @@ namespace BSE
         if (ec)
         {
             m_connected = false;
-            if (m_onConnected) m_onConnected(); // notify even on failure? you may change this behavior
-            return;
+            std::cerr << "Failed to connect: " << ec.message() << "\n";
+        }
+        else
+        {
+            m_connected = true;
+            if (m_onConnected) m_onConnected();
         }
 
         m_connected = true;
@@ -119,12 +124,10 @@ namespace BSE
 
         RequestId reqId = NextRequestId();
 
-        // build payload = [uint32_t reqId] + payload
         ByteBuffer framed;
         AppendPod(framed, reqId);
         framed.insert(framed.end(), payload.begin(), payload.end());
 
-        // store pending
         auto timer = std::make_shared<boost::asio::steady_timer>(m_ioContext);
         PendingReq p;
         p.cb = cb;
@@ -136,7 +139,6 @@ namespace BSE
             m_pendingRequests.emplace(reqId, std::move(p));
         }
 
-        // set timeout
         timer->expires_after(std::chrono::milliseconds(timeoutMs));
         timer->async_wait([this, reqId](const boost::system::error_code& ec) {
             if (ec == boost::asio::error::operation_aborted) return; // cancelled
@@ -151,14 +153,12 @@ namespace BSE
             if (pr.cb) pr.cb(false, {});
         });
 
-        // send
         Send(requestTypeId, framed);
         return reqId;
     }
 
     Client::RequestId Client::Ping(RequestCallback cb, uint32_t timeoutMs)
     {
-        // Ping payload: [uint64_t timestamp_ms]
         uint64_t now = static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now().time_since_epoch()).count());
         ByteBuffer payload;
@@ -169,17 +169,14 @@ namespace BSE
                 if (cb) cb(false, {});
                 return;
             }
-            // response expected: [uint32_t reqId][uint64_t serverTimestamp_ms]
             if (resp.size() < sizeof(uint64_t)) { if (cb) cb(false, {}); return; }
             uint64_t serverTs = ReadPod<uint64_t>(resp, 0);
-            // roundtrip = now -> serverTs? We don't compute exact RTT here since we don't have receive timestamp
             if (cb) cb(true, resp);
         }, timeoutMs);
     }
 
     void Client::OnMessageInternal(uint32_t typeId, const ByteBuffer& payload)
     {
-        // If payload has at least 4 bytes, it may be a response to a pending request
         if (payload.size() >= sizeof(RequestId))
         {
             RequestId rid = ReadPod<RequestId>(payload, 0);
@@ -188,9 +185,7 @@ namespace BSE
             if (it != m_pendingRequests.end() && it->second.responseType == typeId)
             {
                 auto cb = it->second.cb;
-                // cancel timer
                 if (it->second.timer) it->second.timer->cancel();
-                // extract response payload (skip requestId)
                 ByteBuffer resp(payload.begin() + sizeof(RequestId), payload.end());
                 m_pendingRequests.erase(it);
                 if (cb) cb(true, resp);
@@ -198,7 +193,6 @@ namespace BSE
             }
         }
 
-        // otherwise deliver as general message
         if (m_onMessage) m_onMessage(typeId, payload);
     }
 
@@ -226,4 +220,5 @@ namespace BSE
         if (!m_connection) return 0;
         return m_connection->GetBytesReceived();
     }
+
 }

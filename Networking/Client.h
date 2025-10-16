@@ -63,7 +63,7 @@ namespace BSE
         ThreadingSystem& m_threadSystem;
 
         boost::asio::io_context m_ioContext;
-        std::unique_ptr<Connection> m_connection;
+        std::shared_ptr<Connection> m_connection;
         boost::asio::executor_work_guard<boost::asio::io_context::executor_type> m_workGuard;
 
         std::string m_host;
