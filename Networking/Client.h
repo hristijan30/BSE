@@ -9,7 +9,7 @@
 
 namespace BSE
 {
-    class Client
+    class DLL_EXPORT Client
     {
     public:
         using ByteBuffer = Cerialization::ByteBuffer;

@@ -8,7 +8,7 @@
 
 namespace BSE
 {
-    class ServerMain
+    class DLL_EXPORT ServerMain
     {
     public:
         using ByteBuffer = Cerialization::ByteBuffer;

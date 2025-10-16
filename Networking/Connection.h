@@ -6,7 +6,7 @@
 
 namespace BSE
 {
-    class Connection : public std::enable_shared_from_this<Connection>
+    class DLL_EXPORT Connection : public std::enable_shared_from_this<Connection>
     {
     public:
         using ByteBuffer = Cerialization::ByteBuffer;

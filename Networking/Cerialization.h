@@ -1,14 +1,14 @@
 // --- Cerialization.h ---
 #pragma once
 
+#include "../Engine/Define.h"
 #include "../Engine/StandardInclude.h"
 #include <any>
 #include <cstring>
 
 namespace BSE
 {
-
-    class Cerialization
+    class DLL_EXPORT Cerialization
     {
     public:
         using ByteBuffer = std::vector<uint8_t>;
