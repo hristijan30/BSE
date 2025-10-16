@@ -15,6 +15,7 @@ find_package(SDL3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
+find_package(Boost CONFIG REQUIRED)
 
 add_subdirectory("ThirdParty/reactphysics3d") # Make sure to clone the reactphysics3D repo in a ThirdParty folder
 
@@ -41,6 +42,17 @@ set(INPUT_SOURCE
     "Input/Key.h"
     "Input/InputManager.cpp"
     "Input/InputManager.h"
+)
+
+set(NETWORKING_SOURCE
+    "Networking/Cerialization.cpp"
+    "Networking/Cerialization.h"
+    "Networking/Client.cpp"
+    "Networking/Client.h"
+    "Networking/Connection.cpp"
+    "Networking/Connection.h"
+    "Networking/ServerMain.cpp"
+    "Networking/ServerMain.h"
 )
 
 set(PHYSICS_SOURCE
@@ -83,6 +95,7 @@ if(WIN32)
         "${CORE_SOURCE}"
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
+        "${NETWORKING_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
         "${SOUND_SOURCE}"
@@ -93,6 +106,7 @@ else()
         "${CORE_SOURCE}"
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
+        "${NETWORKING_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
         "${SOUND_SOURCE}"
@@ -100,4 +114,8 @@ else()
     )
 endif()
 
-target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL reactphysics3d)
+if(WIN32)
+    target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL reactphysics3d Boost::boost ws2_32 mswsock)
+else()
+    target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL reactphysics3d Boost::boost)
+endif()
