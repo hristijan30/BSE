@@ -1,4 +1,3 @@
-// --- Cerialization.h ---
 #pragma once
 
 #include "../Engine/Define.h"
@@ -29,7 +28,6 @@ namespace BSE
             m_serializers[typeId] = [serializer](const std::any& anyObj) -> ByteBuffer {
                 return serializer(std::any_cast<const T&>(anyObj));
             };
-
             m_deserializers[typeId] = [deserializer](const ByteBuffer& buf) -> std::any {
                 return std::any(deserializer(buf));
             };
@@ -53,17 +51,14 @@ namespace BSE
 
         bool HasType(uint32_t typeId) const;
 
-
     private:
         Cerialization() = default;
         ~Cerialization() = default;
-
         Cerialization(const Cerialization&) = delete;
         Cerialization& operator=(const Cerialization&) = delete;
 
-        std::unordered_map<uint32_t, SerializerFunc> m_serializers;
+        std::unordered_map<uint32_t, SerializerFunc>   m_serializers;
         std::unordered_map<uint32_t, DeserializerFunc> m_deserializers;
-
         mutable std::mutex m_mutex;
     };
 
@@ -103,34 +98,6 @@ namespace BSE
         return s;
     }
 
-    template<typename T>
-    inline std::vector<uint8_t> SerializePODVector(const std::vector<T>& vec)
-    {
-        static_assert(std::is_trivially_copyable<T>::value, "SerializePODVector requires trivially copyable type");
-        std::vector<uint8_t> out;
-        uint32_t count = static_cast<uint32_t>(vec.size());
-        AppendPod(out, count);
-        if (!vec.empty())
-        {
-            const uint8_t* p = reinterpret_cast<const uint8_t*>(vec.data());
-            out.insert(out.end(), p, p + sizeof(T) * vec.size());
-        }
-        return out;
-    }
-
-    template<typename T>
-    inline std::vector<T> DeserializePODVector(const std::vector<uint8_t>& buf)
-    {
-        size_t offset = 0;
-        uint32_t count = ReadPod<uint32_t>(buf, offset);
-        offset += sizeof(uint32_t);
-        if (offset + sizeof(T) * count > buf.size()) throw std::out_of_range("DeserializePODVector: out of range");
-        std::vector<T> v(count);
-        std::memcpy(v.data(), buf.data() + offset, sizeof(T) * count);
-        return v;
-    }
-
     #define BSE_REGISTER_SERIALIZABLE(TYPE, ID, SER_FN, DESER_FN) \
         do { BSE::Cerialization::Instance().RegisterType<TYPE>(ID, SER_FN, DESER_FN); } while(0)
-
 }

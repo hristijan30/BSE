@@ -1,4 +1,3 @@
-// --- ServerMain.h ---
 #pragma once
 
 #include "Connection.h"

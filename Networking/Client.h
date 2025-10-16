@@ -1,4 +1,3 @@
-// --- Client.h ---
 #pragma once
 
 #include "Connection.h"
