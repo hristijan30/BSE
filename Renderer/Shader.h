@@ -86,6 +86,9 @@ namespace BSE
         GLuint GetShaderStorageBlockIndex(const std::string& blockName) const;
         void BindShaderStorageBlock(const std::string& blockName, GLuint bindingPoint) const;
 
+        void BindImageTextureUnit(GLuint unit, GLuint texture, GLint level, GLboolean layered,
+                                  GLint layer, GLenum access, GLenum format) const;
+
         void Dispatch(GLuint x, GLuint y, GLuint z, GLbitfield memoryBarrierBits = GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT) const;
 
         GLuint GetID() const { return programID; }

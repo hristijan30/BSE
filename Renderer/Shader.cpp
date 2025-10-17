@@ -225,6 +225,13 @@ namespace BSE
             glShaderStorageBlockBinding(programID, index, bindingPoint);
     }
 
+    void ComputeShaderProgram::BindImageTextureUnit(GLuint unit, GLuint texture, GLint level, GLboolean layered,
+                                                    GLint layer, GLenum access, GLenum format) const
+    {
+        if (!programID) return;
+        glBindImageTexture(unit, texture, level, layered, layer, access, format);
+    }
+
     void ComputeShaderProgram::Dispatch(GLuint x, GLuint y, GLuint z, GLbitfield memoryBarrierBits) const
     {
         if (!programID) return;
