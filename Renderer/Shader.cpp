@@ -1,6 +1,4 @@
 #include "Shader.h"
-#include <iostream>
-#include <vector>
 
 namespace BSE
 {
@@ -134,6 +132,37 @@ namespace BSE
         if (loc >= 0) glUniformMatrix4fv(loc, 1, GL_FALSE, &matrix[0][0]);
     }
 
+    GLuint ShaderProgram::GetUniformBlockIndex(const std::string& blockName) const
+    {
+        if (!programID) return GL_INVALID_INDEX;
+        return glGetUniformBlockIndex(programID, blockName.c_str());
+    }
+
+    void ShaderProgram::BindUniformBlock(const std::string& blockName, GLuint bindingPoint) const
+    {
+        if (!programID) return;
+        GLuint index = glGetUniformBlockIndex(programID, blockName.c_str());
+        if (index != GL_INVALID_INDEX)
+        {
+            glUniformBlockBinding(programID, index, bindingPoint);
+        }
+    }
+
+    GLuint ShaderProgram::GetShaderStorageBlockIndex(const std::string& blockName) const
+    {
+        if (!programID) return GL_INVALID_INDEX;
+        return glGetProgramResourceIndex(programID, GL_SHADER_STORAGE_BLOCK, blockName.c_str());
+    }
+
+    void ShaderProgram::BindShaderStorageBlock(const std::string& blockName, GLuint bindingPoint) const
+    {
+        if (!programID) return;
+        GLuint index = glGetProgramResourceIndex(programID, GL_SHADER_STORAGE_BLOCK, blockName.c_str());
+        if (index != GL_INVALID_INDEX) {
+            glShaderStorageBlockBinding(programID, index, bindingPoint);
+        }
+    }
+
     ComputeShaderProgram::ComputeShaderProgram(const Shader& compute)
     {
         programID = glCreateProgram();
@@ -165,6 +194,46 @@ namespace BSE
 
     void ComputeShaderProgram::Unbind() const
     {
+        glUseProgram(0);
+    }
+
+    GLuint ComputeShaderProgram::GetUniformBlockIndex(const std::string& blockName) const
+    {
+        if (!programID) return GL_INVALID_INDEX;
+        return glGetUniformBlockIndex(programID, blockName.c_str());
+    }
+
+    void ComputeShaderProgram::BindUniformBlock(const std::string& blockName, GLuint bindingPoint) const
+    {
+        if (!programID) return;
+        GLuint index = glGetUniformBlockIndex(programID, blockName.c_str());
+        if (index != GL_INVALID_INDEX)
+            glUniformBlockBinding(programID, index, bindingPoint);
+    }
+
+    GLuint ComputeShaderProgram::GetShaderStorageBlockIndex(const std::string& blockName) const
+    {
+        if (!programID) return GL_INVALID_INDEX;
+        return glGetProgramResourceIndex(programID, GL_SHADER_STORAGE_BLOCK, blockName.c_str());
+    }
+
+    void ComputeShaderProgram::BindShaderStorageBlock(const std::string& blockName, GLuint bindingPoint) const
+    {
+        if (!programID) return;
+        GLuint index = glGetProgramResourceIndex(programID, GL_SHADER_STORAGE_BLOCK, blockName.c_str());
+        if (index != GL_INVALID_INDEX)
+            glShaderStorageBlockBinding(programID, index, bindingPoint);
+    }
+
+    void ComputeShaderProgram::Dispatch(GLuint x, GLuint y, GLuint z, GLbitfield memoryBarrierBits) const
+    {
+        if (!programID) return;
+        glUseProgram(programID);
+        glDispatchCompute(x, y, z);
+        if (memoryBarrierBits)
+        {
+            glMemoryBarrier(memoryBarrierBits);
+        }
         glUseProgram(0);
     }
 

@@ -2,6 +2,7 @@
 
 #include "../Engine/Define.h"
 #include "../Engine/StandardInclude.h"
+#include "Buffer.h"
 
 #include "OpenGL.h"
 
@@ -53,6 +54,12 @@ namespace BSE
         void SetUniform(const std::string& name, float value) const;
         void SetUniform(const std::string& name, const glm::mat4& matrix) const;
 
+        GLuint GetUniformBlockIndex(const std::string& blockName) const;
+        void BindUniformBlock(const std::string& blockName, GLuint bindingPoint) const;
+
+        GLuint GetShaderStorageBlockIndex(const std::string& blockName) const;
+        void BindShaderStorageBlock(const std::string& blockName, GLuint bindingPoint) const;
+
         GLuint GetID() const { return programID; }
 
         GLuint Release();
@@ -72,6 +79,14 @@ namespace BSE
         void Unbind() const;
 
         void Dispatch(GLuint x, GLuint y, GLuint z) const;
+
+        GLuint GetUniformBlockIndex(const std::string& blockName) const;
+        void BindUniformBlock(const std::string& blockName, GLuint bindingPoint) const;
+
+        GLuint GetShaderStorageBlockIndex(const std::string& blockName) const;
+        void BindShaderStorageBlock(const std::string& blockName, GLuint bindingPoint) const;
+
+        void Dispatch(GLuint x, GLuint y, GLuint z, GLbitfield memoryBarrierBits = GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT) const;
 
         GLuint GetID() const { return programID; }
 

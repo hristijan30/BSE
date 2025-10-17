@@ -65,6 +65,8 @@ set(PHYSICS_SOURCE
 
 set(RENDERER_SOURCE
     "Renderer/OpenGL.h"
+    "Renderer/Buffer.cpp"
+    "Renderer/Buffer.h"
     "Renderer/Camera.cpp"
     "Renderer/Camera.h"
     "Renderer/Material.cpp"
