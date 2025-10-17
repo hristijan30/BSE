@@ -46,7 +46,6 @@ namespace BSE
         void Bind() const;
         void Unbind() const;
 
-        // bind to a binding point for shaders to access as SSBO
         void BindBase(GLuint bindingPoint) const;
 
         GLuint Release();

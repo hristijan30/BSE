@@ -76,7 +76,8 @@ namespace BSE
 
     ShaderStorageBuffer::~ShaderStorageBuffer()
     {
-        if (bufferID != 0) {
+        if (bufferID != 0)
+        {
             glDeleteBuffers(1, &bufferID);
             bufferID = 0;
             bufferSize = 0;
@@ -101,7 +102,8 @@ namespace BSE
     void ShaderStorageBuffer::Update(const void* data, GLsizeiptr size, GLintptr offset) const
     {
         if (!bufferID) return;
-        if (offset + size > bufferSize) {
+        if (offset + size > bufferSize)
+        {
             throw std::runtime_error("ShaderStorageBuffer::Update - write exceeds buffer size");
         }
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, bufferID);
