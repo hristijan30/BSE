@@ -17,7 +17,7 @@ find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
 find_package(Boost CONFIG REQUIRED)
 
-add_subdirectory("ThirdParty/reactphysics3d") # Make sure to clone the reactphysics3D repo in a ThirdParty folder
+add_subdirectory("ThirdParty/ReactPhysics3d")
 
 set(CORE_SOURCE
     "Engine/Define.h"
