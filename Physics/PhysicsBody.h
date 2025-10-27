@@ -10,6 +10,12 @@
 
 namespace BSE
 {
+    using PhysicsWorld = rp3d::PhysicsWorld;
+    using PhysicsCommon = rp3d::PhysicsCommon;
+    using BodyType = rp3d::BodyType;
+    using Collider = rp3d::Collider;
+    using RigidBody = rp3d::RigidBody;
+
     class DLL_EXPORT PhysicsBody
     {
     public:
