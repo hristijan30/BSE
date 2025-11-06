@@ -26,6 +26,12 @@ namespace BSE
 
         virtual bool InitNode()
         {
+            for (auto& pair : childrenByName)
+            {
+                if (pair.second)
+                    pair.second->InitNode();
+            }
+
             for (auto& pair : components)
             {
                 if (pair.second)
@@ -36,6 +42,12 @@ namespace BSE
 
         virtual void DeleteNode()
         {
+            for (auto& pair : childrenByName)
+            {
+                if (pair.second)
+                    pair.second->DeleteNode();
+            }
+
             for (auto& pair : components)
             {
                 if (pair.second)
