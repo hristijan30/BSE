@@ -55,6 +55,11 @@ set(NETWORKING_SOURCE
     "Networking/ServerMain.h"
 )
 
+set(NODE_SOURCE
+    "NodeGraph/Components.h"
+    "NodeGraph/Node.h"
+)
+
 set(PHYSICS_SOURCE
     "Physics/React.h"
     "Physics/PhysicsMaterial.cpp"
@@ -67,8 +72,6 @@ set(RENDERER_SOURCE
     "Renderer/OpenGL.h"
     "Renderer/Buffer.cpp"
     "Renderer/Buffer.h"
-    "Renderer/Camera.cpp"
-    "Renderer/Camera.h"
     "Renderer/Material.cpp"
     "Renderer/Material.h"
     "Renderer/Model.cpp"
@@ -98,6 +101,7 @@ if(WIN32)
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
         "${NETWORKING_SOURCE}"
+        "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
         "${SOUND_SOURCE}"
@@ -109,6 +113,7 @@ else()
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
         "${NETWORKING_SOURCE}"
+        "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
         "${SOUND_SOURCE}"

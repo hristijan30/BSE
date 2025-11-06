@@ -10,6 +10,9 @@ namespace BSE
         virtual ~Component() = default;
         virtual void InitComponent() {}
         virtual void DeleteComponentData() {}
+
+        // Alpha and tick are used to make the program run at a fixed update time 
+            //but render wise can run at a much larger framerate whit out braking the update code by running to fast
         virtual void Update(double Tick) {}
         virtual void Render(double Alpha) {}
     };
