@@ -4,3 +4,6 @@
 [submodule "ThirdParty/Nuklear"]
 	path = ThirdParty/Nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
+[submodule "ThirdParty/SDL3"]
+	path = ThirdParty/SDL3
+	url = https://github.com/libsdl-org/SDL.git

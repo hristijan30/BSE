@@ -19,6 +19,12 @@ find_package(Boost CONFIG REQUIRED)
 
 add_subdirectory("ThirdParty/ReactPhysics3d")
 
+if(NOT SDL3_FOUND)
+    message(WARNING "SDL3 not found — using ThirdParty/SDL3 and raw .lib")
+    add_subdirectory("ThirdParty/SDL3")
+    set(USE_RAW_SDL3_LIB TRUE)
+endif()
+
 set(CORE_SOURCE
     "Engine/Define.h"
     "Engine/SDL_Include.h"
@@ -121,8 +127,58 @@ else()
     )
 endif()
 
+if(USE_RAW_SDL3_LIB)
+    target_include_directories(BSE_Engine PUBLIC
+        "${CMAKE_SOURCE_DIR}/ThirdParty/SDL3/include"
+    )
+endif()
+
 if(WIN32)
-    target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL reactphysics3d Boost::boost ws2_32 mswsock)
+    if(USE_RAW_SDL3_LIB)
+        target_link_libraries(BSE_Engine PUBLIC
+            "SDL3.lib"
+            OpenGL::GL
+            GLEW::GLEW
+            TBB::tbb
+            OpenAL::OpenAL
+            reactphysics3d
+            Boost::boost
+            ws2_32
+            mswsock
+        )
+    else()
+        target_link_libraries(BSE_Engine PUBLIC
+            SDL3::SDL3
+            OpenGL::GL
+            GLEW::GLEW
+            TBB::tbb
+            OpenAL::OpenAL
+            reactphysics3d
+            Boost::boost
+            ws2_32
+            mswsock
+        )
+    endif()
 else()
-    target_link_libraries(BSE_Engine PUBLIC SDL3::SDL3 OpenGL::GL GLEW::GLEW TBB::tbb OpenAL::OpenAL reactphysics3d Boost::boost)
+    if(USE_RAW_SDL3_LIB)
+        target_link_libraries(BSE_Engine PUBLIC
+            "libSDL3.a"
+            OpenGL::GL
+            GLEW::GLEW
+            TBB::tbb
+            OpenAL::OpenAL
+            reactphysics3d
+            Boost::boost
+        )
+    else()
+        target_link_libraries(BSE_Engine PUBLIC
+            SDL3::SDL3
+            OpenGL::GL
+            GLEW::GLEW
+            TBB::tbb
+            OpenAL::OpenAL
+            reactphysics3d
+            Boost::boost
+        )
+    endif()
 endif()
