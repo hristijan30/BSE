@@ -156,13 +156,24 @@ namespace BSE
     {
         if (shaderProgram == 0) return;
 
-        GLint loc = glGetUniformLocation(shaderProgram, "uMVP");
+        GLint locMVP = glGetUniformLocation(shaderProgram, "uMVP");
+        GLint locModel = glGetUniformLocation(shaderProgram, "uModel");
+        GLint locNormalMat = glGetUniformLocation(shaderProgram, "uNormalMatrix");
 
         for (const RenderMesh& mesh : meshes)
         {
             glm::mat4 mvp = viewProjMatrix * mesh.transform;
-            if (loc >= 0)
-                glUniformMatrix4fv(loc, 1, GL_FALSE, &mvp[0][0]);
+            if (locMVP >= 0)
+                glUniformMatrix4fv(locMVP, 1, GL_FALSE, &mvp[0][0]);
+
+            if (locModel >= 0)
+                glUniformMatrix4fv(locModel, 1, GL_FALSE, &mesh.transform[0][0]);
+
+            if (locNormalMat >= 0)
+            {
+                glm::mat3 normalMat = glm::transpose(glm::inverse(glm::mat3(mesh.transform)));
+                glUniformMatrix3fv(locNormalMat, 1, GL_FALSE, &normalMat[0][0]);
+            }
 
             glBindVertexArray(mesh.VAO);
             glDrawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_INT, nullptr);

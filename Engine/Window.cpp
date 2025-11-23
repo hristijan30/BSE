@@ -51,6 +51,8 @@ namespace BSE
             throw std::runtime_error("SDL_GL_SetSwapInterval failed: " + std::string(SDL_GetError()));
         }
 
+        GL::SetDefaultState();
+
         glewExperimental = GL_TRUE;
         GLenum glewStatus = glewInit();
         if (glewStatus != GLEW_OK)

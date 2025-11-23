@@ -19,20 +19,20 @@ namespace BSE
     class DLL_EXPORT PhysicsBody
     {
     public:
-        PhysicsBody(rp3d::PhysicsWorld* world, rp3d::PhysicsCommon& physicsCommon, rp3d::BodyType bodyType = rp3d::BodyType::DYNAMIC);
+        PhysicsBody(PhysicsWorld* world, PhysicsCommon& physicsCommon, BodyType bodyType = BodyType::DYNAMIC);
         ~PhysicsBody();
 
-        rp3d::Collider* AddConcaveMeshCollider(const MeshData& mesh, const PhysicsMaterial* material = nullptr, const glm::mat4& localTransform = glm::mat4(1.0f));
+        Collider* AddConcaveMeshCollider(const MeshData& mesh, const PhysicsMaterial* material = nullptr, const glm::mat4& localTransform = glm::mat4(1.0f));
 
         void SetTransformFromModel(const Model& model);
         void SyncModelTransform(Model& model) const;
 
-        rp3d::RigidBody* GetRigidBody() const { return m_body; }
+        RigidBody* GetRigidBody() const { return m_body; }
 
     private:
-        rp3d::PhysicsWorld* m_world = nullptr;
-        rp3d::PhysicsCommon* m_physicsCommon = nullptr;
-        rp3d::RigidBody* m_body = nullptr;
+        PhysicsWorld* m_world = nullptr;
+        PhysicsCommon* m_physicsCommon = nullptr;
+        RigidBody* m_body = nullptr;
 
         std::vector<rp3d::TriangleVertexArray*> m_triangleVertexArrays;
         std::vector<rp3d::TriangleMesh*> m_triangleMeshes;
