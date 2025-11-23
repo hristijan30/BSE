@@ -78,6 +78,8 @@ set(RENDERER_SOURCE
     "Renderer/OpenGL.h"
     "Renderer/Buffer.cpp"
     "Renderer/Buffer.h"
+    "Renderer/Lighting.cpp"
+    "Renderer/Lighting.h"
     "Renderer/Material.cpp"
     "Renderer/Material.h"
     "Renderer/Model.cpp"

@@ -5,6 +5,7 @@
 #include "../Renderer/Shader.h"
 
 #include "Node.h"
+#include "../Renderer/Lighting.h"
 
 namespace BSE
 {
@@ -15,7 +16,7 @@ namespace BSE
         virtual void InitComponent() override {}
         virtual void DeleteComponentData() override {}
 
-        std::shared_ptr<Model> model; // Shared so you can update the transform data outside of the component while  
+        std::shared_ptr<Model> model;
         std::shared_ptr<Material> mat;
         std::shared_ptr<ShaderProgram> shaProg;
 
@@ -29,7 +30,7 @@ namespace BSE
         ModelRenderer& renderer;
         glm::mat4 viewProjMatrix;
 
-        void SetExtras(ModelRenderer& renderer, glm::mat4 viewProjMatrix) // Put in the loop to always update the view-projection matrix
+        void SetExtras(ModelRenderer& renderer, glm::mat4 viewProjMatrix)
         {
             this->renderer = renderer;
             this->viewProjMatrix = viewProjMatrix;
@@ -44,8 +45,93 @@ namespace BSE
         {
             this->shaProg->Bind();
             this->mat->Bind(this->shaProg->GetID());
+            if (Lighting::ShaderUsesLighting(this->shaProg->GetID()))
+            {
+                Lighting::Apply(this->shaProg->GetID());
+            }
             this->model->Render(this->renderer, this->viewProjMatrix, this->shaProg->GetID());
             this->shaProg->Unbind();
+        }
+    };
+    struct DirectionalLightComponent : Component
+    {
+        glm::vec3 Direction = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1.0f;
+
+        virtual void Update(double Tick) override
+        {
+            LightData d;
+            d.type = LightType::Directional;
+            d.direction = glm::normalize(Direction != glm::vec3(0.0f) ? Direction : glm::vec3(0.0f, -1.0f, 0.0f));
+            d.color = Color;
+            d.intensity = Intensity;
+            Lighting::AddLight(d);
+        }
+    };
+
+    struct PointLightComponent : Component
+    {
+        glm::vec3 Position = glm::vec3(0.0f);
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1.0f;
+        float Radius = 1.0f;
+
+        virtual void Update(double Tick) override
+        {
+            LightData d;
+            d.type = LightType::Point;
+            d.position = Position;
+            d.color = Color;
+            d.intensity = Intensity;
+            d.radius = Radius;
+            Lighting::AddLight(d);
+        }
+    };
+
+    struct SpotLightComponent : Component
+    {
+        glm::vec3 Position = glm::vec3(0.0f);
+        glm::vec3 Direction = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1.0f;
+        float InnerCone = 0.9f;
+        float OuterCone = 0.8f;
+        float Radius = 1.0f;
+
+        virtual void Update(double Tick) override
+        {
+            LightData d;
+            d.type = LightType::Spot;
+            d.position = Position;
+            d.direction = glm::normalize(Direction != glm::vec3(0.0f) ? Direction : glm::vec3(0.0f, -1.0f, 0.0f));
+            d.color = Color;
+            d.intensity = Intensity;
+            d.innerCone = InnerCone;
+            d.outerCone = OuterCone;
+            d.radius = Radius;
+            Lighting::AddLight(d);
+        }
+    };
+
+    struct AreaLightComponent : Component
+    {
+        glm::vec3 Position = glm::vec3(0.0f);
+        glm::vec3 Direction = glm::vec3(0.0f, -1.0f, 0.0f);
+        glm::vec3 Color = glm::vec3(1.0f);
+        float Intensity = 1.0f;
+        glm::vec2 AreaSize = glm::vec2(1.0f);
+
+        virtual void Update(double Tick) override
+        {
+            LightData d;
+            d.type = LightType::Area;
+            d.position = Position;
+            d.direction = glm::normalize(Direction != glm::vec3(0.0f) ? Direction : glm::vec3(0.0f, -1.0f, 0.0f));
+            d.color = Color;
+            d.intensity = Intensity;
+            d.areaSize = AreaSize;
+            Lighting::AddLight(d);
         }
     };
 
