@@ -1,5 +1,7 @@
 #include "Model.h"
 #include "Shader.h"
+#include <sstream>
+#include "../STB/stb_image.h"
 
 namespace BSE
 {
@@ -24,52 +26,99 @@ namespace BSE
 
         uint8_t version = 0;
         file.read(reinterpret_cast<char*>(&version), sizeof(uint8_t));
-        if (version != 1)
+
+        auto read_from_stream = [&m = m_meshes](std::istream& in) -> bool {
+            uint32_t meshCount = 0;
+            in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
+            m.resize(meshCount);
+
+            auto read_string = [&in]() -> std::string {
+                uint16_t len = 0;
+                in.read(reinterpret_cast<char*>(&len), sizeof(uint16_t));
+                std::string s(len, '\0');
+                if (len > 0)
+                    in.read(&s[0], len);
+                return s;
+            };
+
+            for (uint32_t i = 0; i < meshCount; ++i)
+            {
+                MeshData& mesh = m[i];
+                mesh.name = read_string();
+
+                float mat[16];
+                in.read(reinterpret_cast<char*>(mat), sizeof(float) * 16);
+                mesh.transform = glm::make_mat4(mat);
+
+                uint32_t vertexCount = 0, indexCount = 0;
+                in.read(reinterpret_cast<char*>(&vertexCount), sizeof(uint32_t));
+                in.read(reinterpret_cast<char*>(&indexCount), sizeof(uint32_t));
+
+                mesh.positions.resize(vertexCount);
+                mesh.normals.resize(vertexCount);
+                mesh.uvs.resize(vertexCount);
+                mesh.indices.resize(indexCount);
+
+                for (uint32_t v = 0; v < vertexCount; ++v)
+                {
+                    in.read(reinterpret_cast<char*>(&mesh.positions[v]), sizeof(glm::vec3));
+                    in.read(reinterpret_cast<char*>(&mesh.normals[v]), sizeof(glm::vec3));
+                    in.read(reinterpret_cast<char*>(&mesh.uvs[v]), sizeof(glm::vec2));
+                }
+
+                if (indexCount > 0)
+                    in.read(reinterpret_cast<char*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
+            }
+
+            return true;
+        };
+
+        if (version == 1)
+        {
+            if (!read_from_stream(file))
+                return false;
+        }
+        else if (version == 2)
+        {
+            uint8_t flags = 0;
+            file.read(reinterpret_cast<char*>(&flags), sizeof(uint8_t));
+
+            const uint8_t FLAG_COMPRESSED = 1;
+
+            if (flags & FLAG_COMPRESSED)
+            {
+                uint32_t compressedSize = 0, originalSize = 0;
+                file.read(reinterpret_cast<char*>(&compressedSize), sizeof(uint32_t));
+                file.read(reinterpret_cast<char*>(&originalSize), sizeof(uint32_t));
+
+                std::vector<unsigned char> compBuf(compressedSize);
+                file.read(reinterpret_cast<char*>(compBuf.data()), compressedSize);
+
+                std::vector<unsigned char> decompBuf(originalSize);
+
+                int dec = stbi_zlib_decode_buffer(reinterpret_cast<char*>(decompBuf.data()), (int)originalSize,
+                                                  reinterpret_cast<char*>(compBuf.data()), (int)compressedSize);
+                if (dec <= 0)
+                {
+                    std::cerr << "Failed to decompress mesh payload: " << filepath << std::endl;
+                    return false;
+                }
+
+                std::string payload(reinterpret_cast<char*>(decompBuf.data()), originalSize);
+                std::istringstream mem(payload);
+                if (!read_from_stream(mem))
+                    return false;
+            }
+            else
+            {
+                if (!read_from_stream(file))
+                    return false;
+            }
+        }
+        else
         {
             std::cerr << "Unsupported mesh version: " << int(version) << std::endl;
             return false;
-        }
-
-        uint32_t meshCount = 0;
-        file.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
-        m_meshes.resize(meshCount);
-
-        auto read_string = [&file]() -> std::string {
-            uint16_t len = 0;
-            file.read(reinterpret_cast<char*>(&len), sizeof(uint16_t));
-            std::string s(len, '\0');
-            if (len > 0)
-                file.read(&s[0], len);
-            return s;
-        };
-
-        for (uint32_t i = 0; i < meshCount; ++i)
-        {
-            MeshData& mesh = m_meshes[i];
-            mesh.name = read_string();
-
-            float mat[16];
-            file.read(reinterpret_cast<char*>(mat), sizeof(float) * 16);
-            mesh.transform = glm::make_mat4(mat);
-
-            uint32_t vertexCount = 0, indexCount = 0;
-            file.read(reinterpret_cast<char*>(&vertexCount), sizeof(uint32_t));
-            file.read(reinterpret_cast<char*>(&indexCount), sizeof(uint32_t));
-
-            mesh.positions.resize(vertexCount);
-            mesh.normals.resize(vertexCount);
-            mesh.uvs.resize(vertexCount);
-            mesh.indices.resize(indexCount);
-
-            for (uint32_t v = 0; v < vertexCount; ++v)
-            {
-                file.read(reinterpret_cast<char*>(&mesh.positions[v]), sizeof(glm::vec3));
-                file.read(reinterpret_cast<char*>(&mesh.normals[v]), sizeof(glm::vec3));
-                file.read(reinterpret_cast<char*>(&mesh.uvs[v]), sizeof(glm::vec2));
-            }
-
-            if (indexCount > 0)
-                file.read(reinterpret_cast<char*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
         }
 
         file.close();

@@ -1,5 +1,7 @@
 import bpy
 import struct
+import io
+import zlib
 
 bl_info = {
     "name": "Export BMESH (.mesh)",
@@ -43,7 +45,7 @@ def safe_free_eval_mesh(eval_obj, mesh):
         except Exception:
             pass
 
-def write_mesh(filepath, obj, auto_unwrap=False):
+def write_mesh(filepath, obj, auto_unwrap=False, compress=False):
     depsgraph = bpy.context.evaluated_depsgraph_get()
     eval_obj, mesh = get_evaluated_mesh(obj, depsgraph)
     if mesh is None:
@@ -103,7 +105,6 @@ def write_mesh(filepath, obj, auto_unwrap=False):
             if n is None:
                 n = vert.normal.copy()
 
-            # UV
             if has_uvs:
                 try:
                     uv = uv_layer.data[loop_index].uv
@@ -133,33 +134,53 @@ def write_mesh(filepath, obj, auto_unwrap=False):
     vertex_count = len(positions)
     index_count = len(indices)
 
+    buf = io.BytesIO()
+
+    buf.write(struct.pack("I", 1))
+
+    name_bytes = obj.name.encode('utf-8')
+    buf.write(struct.pack("H", len(name_bytes)))
+    buf.write(name_bytes)
+
+    mat = obj.matrix_world
+    for r in range(4):
+        for c in range(4):
+            buf.write(struct.pack("f", mat[r][c]))
+
+    buf.write(struct.pack("I", vertex_count))
+    buf.write(struct.pack("I", index_count))
+
+    for i in range(vertex_count):
+        px, py, pz = positions[i]
+        nx, ny, nz = normals[i]
+        ux, uy = uvs[i]
+        buf.write(struct.pack("3f", px, py, pz))
+        buf.write(struct.pack("3f", nx, ny, nz))
+        buf.write(struct.pack("2f", ux, uy))
+
+    if index_count > 0:
+        buf.write(struct.pack(f"{index_count}I", *indices))
+
+    payload = buf.getvalue()
+
     with open(filepath, "wb") as f:
         f.write(b"BMESH")
-        f.write(struct.pack("B", 1))
-        f.write(struct.pack("I", 1))
+        f.write(struct.pack("B", 2))
 
-        name_bytes = obj.name.encode('utf-8')
-        f.write(struct.pack("H", len(name_bytes)))
-        f.write(name_bytes)
+        if compress:
+            flags = 1
+        else:
+            flags = 0
 
-        mat = obj.matrix_world
-        for r in range(4):
-            for c in range(4):
-                f.write(struct.pack("f", mat[r][c]))
+        f.write(struct.pack("B", flags))
 
-        f.write(struct.pack("I", vertex_count))
-        f.write(struct.pack("I", index_count))
-
-        for i in range(vertex_count):
-            px, py, pz = positions[i]
-            nx, ny, nz = normals[i]
-            ux, uy = uvs[i]
-            f.write(struct.pack("3f", px, py, pz))
-            f.write(struct.pack("3f", nx, ny, nz))
-            f.write(struct.pack("2f", ux, uy))
-
-        if index_count > 0:
-            f.write(struct.pack(f"{index_count}I", *indices))
+        if compress:
+            compressed = zlib.compress(payload)
+            f.write(struct.pack("I", len(compressed)))
+            f.write(struct.pack("I", len(payload)))
+            f.write(compressed)
+        else:
+            f.write(payload)
 
     safe_free_eval_mesh(eval_obj, mesh)
     print(f"Exported '{filepath}' -> {vertex_count} verts, {index_count} indices (UVs: {has_uvs})")
@@ -175,13 +196,18 @@ class ExportBMESH_NoSplit(bpy.types.Operator): # Split normal error fixed now
         description="Attempt to create UVs if none exist (best to unwrap in Edit Mode before export)",
         default=False,
     )
+    compress: bpy.props.BoolProperty(
+        name="Compress",
+        description="Compress mesh payload with zlib to reduce file size",
+        default=False,
+    )
 
     def execute(self, context):
         obj = context.active_object
         if not obj or obj.type != 'MESH':
             self.report({'ERROR'}, "Select a mesh object")
             return {'CANCELLED'}
-        write_mesh(self.filepath, obj, auto_unwrap=self.auto_unwrap)
+        write_mesh(self.filepath, obj, auto_unwrap=self.auto_unwrap, compress=self.compress)
         return {'FINISHED'}
 
     def invoke(self, context, event):
