@@ -13,7 +13,7 @@ uniform float uSpecularStrength;
 
 uniform vec3 uCameraPos;
 
-const int MAX_LIGHTS = 8;
+const int MAX_LIGHTS = 16;
 uniform int uLightCount;
 uniform int uLightType[MAX_LIGHTS];
 uniform vec3 uLightPos[MAX_LIGHTS];
