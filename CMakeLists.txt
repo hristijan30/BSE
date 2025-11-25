@@ -184,3 +184,9 @@ else()
         )
     endif()
 endif()
+
+add_executable(BSE_ModelViewer
+    "Tools/ModelViewer/ModelViewer.cpp"
+)
+target_link_libraries(BSE_ModelViewer PUBLIC BSE_Engine)
+target_include_directories(BSE_ModelViewer PUBLIC ${CMAKE_SOURCE_DIR})

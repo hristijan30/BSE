@@ -24,13 +24,26 @@ namespace BSE
             return false;
         }
 
-        uint8_t version = 0;
-        file.read(reinterpret_cast<char*>(&version), sizeof(uint8_t));
+        uint8_t nextByte = 0;
+        file.read(reinterpret_cast<char*>(&nextByte), sizeof(uint8_t));
 
         auto read_from_stream = [&m = m_meshes](std::istream& in) -> bool {
             uint32_t meshCount = 0;
             in.read(reinterpret_cast<char*>(&meshCount), sizeof(uint32_t));
-            m.resize(meshCount);
+
+            const uint32_t MAX_MESHES = 10000;
+            if (meshCount > MAX_MESHES)
+            {
+                std::cerr << "Mesh file contains too many meshes: " << meshCount << " (limit " << MAX_MESHES << ")" << std::endl;
+                return false;
+            }
+
+            try {
+                m.resize(meshCount);
+            } catch (const std::bad_alloc&) {
+                std::cerr << "Failed to allocate mesh list (too large): " << meshCount << std::endl;
+                return false;
+            }
 
             auto read_string = [&in]() -> std::string {
                 uint16_t len = 0;
@@ -54,10 +67,24 @@ namespace BSE
                 in.read(reinterpret_cast<char*>(&vertexCount), sizeof(uint32_t));
                 in.read(reinterpret_cast<char*>(&indexCount), sizeof(uint32_t));
 
-                mesh.positions.resize(vertexCount);
-                mesh.normals.resize(vertexCount);
-                mesh.uvs.resize(vertexCount);
-                mesh.indices.resize(indexCount);
+                const uint32_t MAX_VERTS = 10000000;
+                const uint32_t MAX_INDICES = 30000000;
+
+                if (vertexCount > MAX_VERTS || indexCount > MAX_INDICES)
+                {
+                    std::cerr << "Mesh has unreasonable vertex/index counts: v=" << vertexCount << " i=" << indexCount << std::endl;
+                    return false;
+                }
+
+                try {
+                    mesh.positions.resize(vertexCount);
+                    mesh.normals.resize(vertexCount);
+                    mesh.uvs.resize(vertexCount);
+                    mesh.indices.resize(indexCount);
+                } catch (const std::bad_alloc&) {
+                    std::cerr << "Failed to allocate mesh vertex/index buffers: v=" << vertexCount << " i=" << indexCount << std::endl;
+                    return false;
+                }
 
                 for (uint32_t v = 0; v < vertexCount; ++v)
                 {
@@ -73,35 +100,121 @@ namespace BSE
             return true;
         };
 
-        if (version == 1)
+        const uint8_t FLAG_COMPRESSED = 1;
+
+        if (nextByte == 1)
         {
             if (!read_from_stream(file))
                 return false;
         }
-        else if (version == 2)
+        else if (nextByte == 2)
         {
             uint8_t flags = 0;
             file.read(reinterpret_cast<char*>(&flags), sizeof(uint8_t));
 
-            const uint8_t FLAG_COMPRESSED = 1;
+            if (flags & FLAG_COMPRESSED)
+            {
+                    std::streampos posAfterFlags = file.tellg();
+
+                    uint32_t compressedSize = 0, originalSize = 0;
+                    file.read(reinterpret_cast<char*>(&compressedSize), sizeof(uint32_t));
+                    file.read(reinterpret_cast<char*>(&originalSize), sizeof(uint32_t));
+
+                    const uint32_t MAX_COMPRESSED = 100u * 1024u * 1024u;
+                    const uint32_t MAX_ORIGINAL = 500u * 1024u * 1024u;
+
+                    if (compressedSize == 0 || originalSize == 0 || compressedSize > MAX_COMPRESSED || originalSize > MAX_ORIGINAL)
+                    {
+                        std::cerr << "Compressed mesh payload sizes invalid or too large: comp=" << compressedSize << " orig=" << originalSize << ". Falling back to uncompressed parsing." << std::endl;
+                        file.clear();
+                        file.seekg(posAfterFlags);
+                        if (!read_from_stream(file)) return false;
+                        return true;
+                    }
+
+                    std::vector<unsigned char> compBuf;
+                    std::vector<unsigned char> decompBuf;
+                    try {
+                        compBuf.resize(compressedSize);
+                        file.read(reinterpret_cast<char*>(compBuf.data()), compressedSize);
+                        decompBuf.resize(originalSize);
+                    } catch (const std::bad_alloc&) {
+                        std::cerr << "Failed to allocate compressed/decompressed buffers (too large). Falling back to uncompressed parsing." << std::endl;
+                        file.clear();
+                        file.seekg(posAfterFlags);
+                        if (!read_from_stream(file)) return false;
+                        return true;
+                    }
+
+                    int dec = stbi_zlib_decode_buffer(reinterpret_cast<char*>(decompBuf.data()), (int)originalSize,
+                                                      reinterpret_cast<char*>(compBuf.data()), (int)compressedSize);
+                    if (dec <= 0)
+                    {
+                        std::cerr << "Failed to decompress mesh payload: " << filepath << ". Falling back to uncompressed parsing." << std::endl;
+                        file.clear();
+                        file.seekg(posAfterFlags);
+                        if (!read_from_stream(file)) return false;
+                        return true;
+                    }
+
+                    std::string payload(reinterpret_cast<char*>(decompBuf.data()), originalSize);
+                    std::istringstream mem(payload);
+                    if (!read_from_stream(mem))
+                        return false;
+            }
+            else
+            {
+                if (!read_from_stream(file))
+                    return false;
+            }
+        }
+        else
+        {
+            uint8_t flags = nextByte;
 
             if (flags & FLAG_COMPRESSED)
             {
+                std::streampos posAfterFlags = file.tellg();
+
                 uint32_t compressedSize = 0, originalSize = 0;
                 file.read(reinterpret_cast<char*>(&compressedSize), sizeof(uint32_t));
                 file.read(reinterpret_cast<char*>(&originalSize), sizeof(uint32_t));
 
-                std::vector<unsigned char> compBuf(compressedSize);
-                file.read(reinterpret_cast<char*>(compBuf.data()), compressedSize);
+                const uint32_t MAX_COMPRESSED = 100u * 1024u * 1024u;
+                const uint32_t MAX_ORIGINAL = 500u * 1024u * 1024u;
 
-                std::vector<unsigned char> decompBuf(originalSize);
+                if (compressedSize == 0 || originalSize == 0 || compressedSize > MAX_COMPRESSED || originalSize > MAX_ORIGINAL)
+                {
+                    std::cerr << "Compressed mesh payload sizes invalid or too large: comp=" << compressedSize << " orig=" << originalSize << ". Falling back to uncompressed parsing." << std::endl;
+                    file.clear();
+                    file.seekg(posAfterFlags);
+                    if (!read_from_stream(file)) return false;
+                    return true;
+                }
+
+                std::vector<unsigned char> compBuf;
+                std::vector<unsigned char> decompBuf;
+                try {
+                    compBuf.resize(compressedSize);
+                    file.read(reinterpret_cast<char*>(compBuf.data()), compressedSize);
+                    decompBuf.resize(originalSize);
+                } catch (const std::bad_alloc&) {
+                    std::cerr << "Failed to allocate compressed/decompressed buffers (too large). Falling back to uncompressed parsing." << std::endl;
+                    file.clear();
+                    file.seekg(posAfterFlags);
+                    if (!read_from_stream(file)) return false;
+                    return true;
+                }
 
                 int dec = stbi_zlib_decode_buffer(reinterpret_cast<char*>(decompBuf.data()), (int)originalSize,
                                                   reinterpret_cast<char*>(compBuf.data()), (int)compressedSize);
                 if (dec <= 0)
                 {
-                    std::cerr << "Failed to decompress mesh payload: " << filepath << std::endl;
-                    return false;
+                    std::cerr << "Failed to decompress mesh payload: " << filepath << ". Falling back to uncompressed parsing." << std::endl;
+                    file.clear();
+                    file.seekg(posAfterFlags);
+                    if (!read_from_stream(file)) return false;
+                    return true;
                 }
 
                 std::string payload(reinterpret_cast<char*>(decompBuf.data()), originalSize);
@@ -114,11 +227,6 @@ namespace BSE
                 if (!read_from_stream(file))
                     return false;
             }
-        }
-        else
-        {
-            std::cerr << "Unsupported mesh version: " << int(version) << std::endl;
-            return false;
         }
 
         file.close();

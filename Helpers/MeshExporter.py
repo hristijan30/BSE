@@ -6,7 +6,7 @@ import zlib
 bl_info = {
     "name": "Export BMESH (.mesh)",
     "author": "KikoMira",
-    "version": (1, 2),
+    "version": (1, 2),zzz
     "blender": (2, 80, 0),
     "location": "File > Export > BMESH (.mesh)",
     "category": "Import-Export",
