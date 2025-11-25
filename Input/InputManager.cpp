@@ -46,6 +46,8 @@ namespace BSE
         m_mousePos = { static_cast<int>(fx), static_cast<int>(fy) };
         m_lastMousePos = m_mousePos;
         m_previousMouseButtons = m_currentMouseButtons;
+
+        RefreshGamepads();
     }
 
     void InputManager::Update()
@@ -72,6 +74,48 @@ namespace BSE
         m_currentMouseButtons = SDL_GetMouseState(&fx, &fy);
         m_mousePos = { static_cast<int>(fx), static_cast<int>(fy) };
         m_mouseDelta = m_mousePos - m_lastMousePos;
+
+        RefreshGamepads();
+
+        for (auto &g : m_gamepads)
+        {
+            if (!g.joystick) continue;
+
+            g.previousButtons = g.currentButtons;
+
+            int btnCount = SDL_GetNumJoystickButtons(g.joystick);
+            if (btnCount > 0)
+            {
+                if ((int)g.currentButtons.size() != btnCount)
+                {
+                    g.currentButtons.assign(btnCount, false);
+                    g.previousButtons.assign(btnCount, false);
+                }
+
+                for (int b = 0; b < btnCount; ++b)
+                {
+                    g.currentButtons[b] = (SDL_GetJoystickButton(g.joystick, b) != 0);
+                }
+            }
+
+            int axisCount = SDL_GetNumJoystickAxes(g.joystick);
+            if (axisCount > 0)
+            {
+                if ((int)g.axesRaw.size() != axisCount)
+                {
+                    g.axesRaw.assign(axisCount, 0);
+                    g.axes.assign(axisCount, 0.0f);
+                }
+
+                for (int a = 0; a < axisCount; ++a)
+                {
+                    int16_t raw = SDL_GetJoystickAxis(g.joystick, a);
+                    g.axesRaw[a] = raw;
+                    // Normalize to -1..1 (SDL_JOYSTICK_AXIS_MAX == 32767)
+                    g.axes[a] = (raw >= 0) ? (raw / 32767.0f) : (raw / 32768.0f);
+                }
+            }
+        }
     }
 
     bool InputManager::IsKeyDown(KeyCode key) const
@@ -114,5 +158,102 @@ namespace BSE
     {
         Uint32 mask = ButtonToMask(button);
         return ((m_currentMouseButtons & mask) == 0) && ((m_previousMouseButtons & mask) != 0);
+    }
+
+    int InputManager::GetGamepadCount() const
+    {
+        return static_cast<int>(m_gamepads.size());
+    }
+
+    bool InputManager::IsGamepadButtonDown(int padIndex, int button) const
+    {
+        if (padIndex < 0 || padIndex >= (int)m_gamepads.size()) return false;
+        const auto &g = m_gamepads[padIndex];
+        if (!g.joystick) return false;
+        if (button < 0 || button >= (int)g.currentButtons.size()) return false;
+        return g.currentButtons[button];
+    }
+
+    bool InputManager::IsGamepadButtonPressed(int padIndex, int button) const
+    {
+        if (padIndex < 0 || padIndex >= (int)m_gamepads.size()) return false;
+        const auto &g = m_gamepads[padIndex];
+        if (!g.joystick) return false;
+        if (button < 0 || button >= (int)g.currentButtons.size()) return false;
+        return g.currentButtons[button] && !g.previousButtons[button];
+    }
+
+    bool InputManager::IsGamepadButtonReleased(int padIndex, int button) const
+    {
+        if (padIndex < 0 || padIndex >= (int)m_gamepads.size()) return false;
+        const auto &g = m_gamepads[padIndex];
+        if (!g.joystick) return false;
+        if (button < 0 || button >= (int)g.currentButtons.size()) return false;
+        return !g.currentButtons[button] && g.previousButtons[button];
+    }
+
+    float InputManager::GetGamepadAxis(int padIndex, int axis) const
+    {
+        if (padIndex < 0 || padIndex >= (int)m_gamepads.size()) return 0.0f;
+        const auto &g = m_gamepads[padIndex];
+        if (!g.joystick) return 0.0f;
+        if (axis < 0 || axis >= (int)g.axes.size()) return 0.0f;
+        return g.axes[axis];
+    }
+
+    void InputManager::RefreshGamepads()
+    {
+        int count = 0;
+        SDL_JoystickID *ids = SDL_GetJoysticks(&count);
+        if (!ids)
+        {
+            return;
+        }
+
+        std::vector<SDL_JoystickID> currentIds;
+        currentIds.assign(ids, ids + count);
+        SDL_free(ids);
+
+        for (int i = (int)m_gamepads.size() - 1; i >= 0; --i)
+        {
+            auto &g = m_gamepads[i];
+            bool found = false;
+            for (auto id : currentIds) if (id == g.instanceId) { found = true; break; }
+            if (!found)
+            {
+                if (g.joystick) SDL_CloseJoystick(g.joystick);
+                m_gamepads.erase(m_gamepads.begin() + i);
+            }
+        }
+
+        for (auto id : currentIds)
+        {
+            bool already = false;
+            for (const auto &g : m_gamepads) if (g.instanceId == id) { already = true; break; }
+            if (already) continue;
+
+            SDL_Joystick *joy = SDL_OpenJoystick(id);
+            if (!joy) continue;
+
+            GamepadState gs;
+            gs.joystick = joy;
+            gs.instanceId = id;
+
+            int btnCount = SDL_GetNumJoystickButtons(joy);
+            if (btnCount > 0)
+            {
+                gs.currentButtons.assign(btnCount, false);
+                gs.previousButtons.assign(btnCount, false);
+            }
+
+            int axisCount = SDL_GetNumJoystickAxes(joy);
+            if (axisCount > 0)
+            {
+                gs.axesRaw.assign(axisCount, 0);
+                gs.axes.assign(axisCount, 0.0f);
+            }
+
+            m_gamepads.push_back(gs);
+        }
     }
 }
