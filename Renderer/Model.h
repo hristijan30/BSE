@@ -53,6 +53,7 @@ namespace BSE
         ~ModelLoader() { Unload(); }
 
         bool Load(const std::string& filepath);
+        bool LoadFromMeshes(const std::vector<MeshData>& meshes);
         void Unload();
 
         const std::vector<MeshData>& GetMeshes() const { return m_meshes; }
@@ -93,6 +94,7 @@ namespace BSE
         ~Model() { Unload(); }
 
         bool LoadFromFile(const std::string& filepath);
+        bool LoadFromMeshes(const std::vector<MeshData>& meshes);
         void Unload();
 
         void SetPosition(const glm::vec3& pos) { m_position = pos; UpdateRenderTransforms(); }

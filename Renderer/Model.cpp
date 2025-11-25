@@ -130,6 +130,13 @@ namespace BSE
         m_meshes.clear();
     }
 
+    bool ModelLoader::LoadFromMeshes(const std::vector<MeshData>& meshes)
+    {
+        Unload();
+        m_meshes = meshes;
+        return true;
+    }
+
     void ModelProcessor::Process(const std::vector<MeshData>& meshes)
     {
         Release();
@@ -241,6 +248,23 @@ namespace BSE
 
         const auto& meshes = m_loader.GetMeshes();
         m_processor.Process(meshes);
+
+        UpdateRenderTransforms();
+
+        return true;
+    }
+
+    bool Model::LoadFromMeshes(const std::vector<MeshData>& meshes)
+    {
+        Unload();
+
+        if (!m_loader.LoadFromMeshes(meshes))
+        {
+            return false;
+        }
+
+        const auto& m = m_loader.GetMeshes();
+        m_processor.Process(m);
 
         UpdateRenderTransforms();
 

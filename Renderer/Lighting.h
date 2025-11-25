@@ -30,7 +30,16 @@ namespace BSE
     class DLL_EXPORT Lighting
     {
     public:
-        static const int MaxLights = 8;
+        enum class Mode : int
+        {
+            Unlit = 0,
+            Lit = 1
+        };
+
+        static void SetMode(Mode m);
+        static Mode GetMode();
+
+        static const int MaxLights = 16;
 
         static void Clear();
         static void AddLight(const LightData& light);
@@ -44,5 +53,6 @@ namespace BSE
         static std::vector<LightData> s_lights;
         static glm::vec3 s_ambientColor;
         static float s_ambientIntensity;
+        static Mode s_mode;
     };
 }

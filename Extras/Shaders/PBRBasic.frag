@@ -27,6 +27,7 @@ uniform vec2 uLightAreaSize[MAX_LIGHTS];
 
 uniform vec3 uAmbientColor;
 uniform float uAmbientIntensity;
+uniform int uLightingMode;
 
 uniform sampler2D uDiffuseMap;
 uniform sampler2D uNormalMap;
@@ -106,59 +107,62 @@ void main()
 
     vec3 Lo = vec3(0.0);
 
-    for (int i = 0; i < uLightCount && i < MAX_LIGHTS; ++i)
+    if (uLightingMode != 0)
     {
-        int t = uLightType[i];
-        vec3 radiance = uLightColor[i] * uLightIntensity[i];
-
-        vec3 Ldir;
-        float attenuation = 1.0;
-
-        if (t == 0)
+        for (int i = 0; i < uLightCount && i < MAX_LIGHTS; ++i)
         {
-            Ldir = normalize(-uLightDir[i]);
-        }
-        else
-        {
-            vec3 toLight = uLightPos[i] - vWorldPos;
-            float dist = length(toLight);
-            Ldir = normalize(toLight);
-            float r = max(uLightRadius[i], 0.0001);
-            attenuation = 1.0 / max(1.0 + (dist * dist) / (r * r), 1.0);
+            int t = uLightType[i];
+            vec3 radiance = uLightColor[i] * uLightIntensity[i];
 
-            if (t == 2)
-            {
-                float cosTheta = dot(normalize(-uLightDir[i]), Ldir);
-                float inner = uLightInnerCone[i];
-                float outer = uLightOuterCone[i];
-                float spot = clamp((cosTheta - outer) / max(inner - outer, 1e-4), 0.0, 1.0);
-                attenuation *= spot;
-            }
-            else if (t == 3)
+            vec3 Ldir;
+            float attenuation = 1.0;
+
+            if (t == 0)
             {
                 Ldir = normalize(-uLightDir[i]);
-                float area = max(0.0001, uLightAreaSize[i].x * uLightAreaSize[i].y);
-                attenuation = 1.0 / max(area, 1.0);
             }
+            else
+            {
+                vec3 toLight = uLightPos[i] - vWorldPos;
+                float dist = length(toLight);
+                Ldir = normalize(toLight);
+                float r = max(uLightRadius[i], 0.0001);
+                attenuation = 1.0 / max(1.0 + (dist * dist) / (r * r), 1.0);
+
+                if (t == 2)
+                {
+                    float cosTheta = dot(normalize(-uLightDir[i]), Ldir);
+                    float inner = uLightInnerCone[i];
+                    float outer = uLightOuterCone[i];
+                    float spot = clamp((cosTheta - outer) / max(inner - outer, 1e-4), 0.0, 1.0);
+                    attenuation *= spot;
+                }
+                else if (t == 3)
+                {
+                    Ldir = normalize(-uLightDir[i]);
+                    float area = max(0.0001, uLightAreaSize[i].x * uLightAreaSize[i].y);
+                    attenuation = 1.0 / max(area, 1.0);
+                }
+            }
+
+            vec3 H = normalize(V + Ldir);
+
+            float NdotL = max(dot(N, Ldir), 0.0);
+
+            float NDF = DistributionGGX(N, H, roughness);
+            float G = GeometrySmith(N, V, Ldir, roughness);
+            vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+
+            vec3 nominator = NDF * G * F;
+            float denominator = 4.0 * max(dot(N, V), 0.001) * max(dot(N, Ldir), 0.001);
+            vec3 specular = nominator / max(denominator, 0.001);
+
+            vec3 kS = F;
+            vec3 kD = vec3(1.0) - kS;
+            kD *= 1.0 - metallic;
+
+            Lo += (kD * albedo / PI + specular) * radiance * NdotL * attenuation;
         }
-
-        vec3 H = normalize(V + Ldir);
-
-        float NdotL = max(dot(N, Ldir), 0.0);
-
-        float NDF = DistributionGGX(N, H, roughness);
-        float G = GeometrySmith(N, V, Ldir, roughness);
-        vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
-
-        vec3 nominator = NDF * G * F;
-        float denominator = 4.0 * max(dot(N, V), 0.001) * max(dot(N, Ldir), 0.001);
-        vec3 specular = nominator / max(denominator, 0.001);
-
-        vec3 kS = F;
-        vec3 kD = vec3(1.0) - kS;
-        kD *= 1.0 - metallic;
-
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL * attenuation;
     }
 
     vec3 ambient = uAmbientColor * uAmbientIntensity * albedo * ao;

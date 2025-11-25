@@ -6,6 +6,7 @@ namespace BSE
     std::vector<LightData> Lighting::s_lights;
     glm::vec3 Lighting::s_ambientColor = glm::vec3(0.03f);
     float Lighting::s_ambientIntensity = 1.0f;
+    Lighting::Mode Lighting::s_mode = Lighting::Mode::Lit;
     static bool s_frameStarted = false;
 
     void Lighting::Clear()
@@ -33,6 +34,16 @@ namespace BSE
         s_ambientIntensity = intensity;
     }
 
+    void Lighting::SetMode(Mode m)
+    {
+        s_mode = m;
+    }
+
+    Lighting::Mode Lighting::GetMode()
+    {
+        return s_mode;
+    }
+
     static inline std::string IndexName(const char* base, int idx)
     {
         std::ostringstream ss;
@@ -48,6 +59,9 @@ namespace BSE
         if (loc >= 0) glUniform3fv(loc, 1, &s_ambientColor[0]);
         loc = glGetUniformLocation(shaderProgram, "uAmbientIntensity");
         if (loc >= 0) glUniform1f(loc, s_ambientIntensity);
+
+        GLint locMode = glGetUniformLocation(shaderProgram, "uLightingMode");
+        if (locMode >= 0) glUniform1i(locMode, (int)s_mode);
 
         GLint locCount = glGetUniformLocation(shaderProgram, "uLightCount");
         if (locCount >= 0) glUniform1i(locCount, (int)s_lights.size());
