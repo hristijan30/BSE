@@ -16,6 +16,7 @@ find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
 find_package(Boost CONFIG REQUIRED)
+find_package(assimp REQUIRED)
 
 add_subdirectory("ThirdParty/ReactPhysics3d")
 
@@ -75,6 +76,8 @@ set(PHYSICS_SOURCE
 )
 
 set(RENDERER_SOURCE
+    "Renderer/AssimpModelLoader.cpp"
+    "Renderer/AssimpModelLoader.h"
     "Renderer/OpenGL.h"
     "Renderer/Buffer.cpp"
     "Renderer/Buffer.h"
@@ -147,6 +150,7 @@ if(WIN32)
             Boost::boost
             ws2_32
             mswsock
+            assimp::assimp
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -159,6 +163,7 @@ if(WIN32)
             Boost::boost
             ws2_32
             mswsock
+            assimp::assimp
         )
     endif()
 else()
@@ -171,6 +176,7 @@ else()
             OpenAL::OpenAL
             reactphysics3d
             Boost::boost
+            assimp::assimp
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -181,6 +187,7 @@ else()
             OpenAL::OpenAL
             reactphysics3d
             Boost::boost
+            assimp::assimp
         )
     endif()
 endif()

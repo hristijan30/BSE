@@ -98,6 +98,28 @@ namespace BSE
     void Material::Bind(GLuint shaderProgram) const
     {
         if (shaderProgram == 0) return;
+        static GLuint s_defaultWhite = 0;
+        static GLuint s_defaultNormal = 0;
+        if (s_defaultWhite == 0)
+        {
+            glGenTextures(1, &s_defaultWhite);
+            glBindTexture(GL_TEXTURE_2D, s_defaultWhite);
+            unsigned char white[4] = { 255, 255, 255, 255 };
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, white);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
+        if (s_defaultNormal == 0)
+        {
+            glGenTextures(1, &s_defaultNormal);
+            glBindTexture(GL_TEXTURE_2D, s_defaultNormal);
+            unsigned char nrm[4] = { 128, 128, 255, 255 };
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, nrm);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
 
         GLint loc;
         loc = glGetUniformLocation(shaderProgram, "uBaseColor");
@@ -122,11 +144,29 @@ namespace BSE
         if (loc >= 0) glUniform1f(loc, SpecularStrength);
 
         int slot = 0;
-        if (m_diffuse) { m_diffuse->Bind(slot); glUniform1i(glGetUniformLocation(shaderProgram, "uDiffuseMap"), slot); slot++; }
-        if (m_normal) { m_normal->Bind(slot); glUniform1i(glGetUniformLocation(shaderProgram, "uNormalMap"), slot); slot++; }
-        if (m_roughness) { m_roughness->Bind(slot); glUniform1i(glGetUniformLocation(shaderProgram, "uRoughnessMap"), slot); slot++; }
-        if (m_metallic) { m_metallic->Bind(slot); glUniform1i(glGetUniformLocation(shaderProgram, "uMetallicMap"), slot); slot++; }
-        if (m_ao) { m_ao->Bind(slot); glUniform1i(glGetUniformLocation(shaderProgram, "uAOMap"), slot); slot++; }
-        if (m_emissive) { m_emissive->Bind(slot); glUniform1i(glGetUniformLocation(shaderProgram, "uEmissiveMap"), slot); slot++; }
+
+        if (m_diffuse) { m_diffuse->Bind(slot); }
+        else { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_2D, s_defaultWhite); }
+        glUniform1i(glGetUniformLocation(shaderProgram, "uDiffuseMap"), slot); slot++;
+
+        if (m_normal) { m_normal->Bind(slot); }
+        else { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_2D, s_defaultNormal); }
+        glUniform1i(glGetUniformLocation(shaderProgram, "uNormalMap"), slot); slot++;
+
+        if (m_roughness) { m_roughness->Bind(slot); }
+        else { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_2D, s_defaultWhite); }
+        glUniform1i(glGetUniformLocation(shaderProgram, "uRoughnessMap"), slot); slot++;
+
+        if (m_metallic) { m_metallic->Bind(slot); }
+        else { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_2D, s_defaultWhite); }
+        glUniform1i(glGetUniformLocation(shaderProgram, "uMetallicMap"), slot); slot++;
+
+        if (m_ao) { m_ao->Bind(slot); }
+        else { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_2D, s_defaultWhite); }
+        glUniform1i(glGetUniformLocation(shaderProgram, "uAOMap"), slot); slot++;
+
+        if (m_emissive) { m_emissive->Bind(slot); }
+        else { glActiveTexture(GL_TEXTURE0 + slot); glBindTexture(GL_TEXTURE_2D, s_defaultWhite); }
+        glUniform1i(glGetUniformLocation(shaderProgram, "uEmissiveMap"), slot); slot++;
     }
 }

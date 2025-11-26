@@ -3,6 +3,9 @@
 #include "Renderer/Material.h"
 #include "Renderer/Shader.h"
 #include "Renderer/OpenGL.h"
+#include "Renderer/Lighting.h"
+#include "NodeGraph/Node.h"
+#include "NodeGraph/Components.h"
 
 #include <fstream>
 #include <iostream>
@@ -53,21 +56,21 @@ int main(int argc, char** argv)
 
         Shader vert(vertSrc, ShaderType::Vertex);
         Shader frag(fragSrc, ShaderType::Fragment);
-        ShaderProgram program(vert, frag);
+        auto program = std::make_shared<ShaderProgram>(vert, frag);
 
-        Material material;
+        auto material = std::make_shared<Material>();
         if (!matPath.empty())
         {
-            if (!material.LoadFromFile(matPath))
+            if (!material->LoadFromFile(matPath))
             {
                 std::cerr << "Failed to load material: " << matPath << " - using defaults\n";
             }
         }
 
-        Model model;
+        auto modelPtr = std::make_shared<Model>();
         if (!modelPath.empty())
         {
-            if (!model.LoadFromFile(modelPath))
+            if (!modelPtr->LoadFromFile(modelPath))
             {
                 std::cerr << "Failed to load model: " << modelPath << "\n";
                 return 1;
@@ -90,7 +93,7 @@ int main(int argc, char** argv)
         float distance = 3.0f;
         glm::vec3 center(0.0f);
 
-        const auto& meshes = model.GetMeshes();
+        const auto& meshes = modelPtr->GetMeshes();
         if (!meshes.empty())
         {
             glm::vec3 minp(FLT_MAX), maxp(-FLT_MAX);
@@ -104,8 +107,63 @@ int main(int argc, char** argv)
             if (radius > 0.001f) distance = radius * 2.0f;
         }
 
+        Lighting::SetMode(Lighting::Mode::Unlit);
+        Lighting::Clear();
+        Lighting::SetAmbient(glm::vec3(1.0f), 1.0f);
+
+        auto rootNode = std::make_shared<Node>("Root");
+        auto camNode = std::make_shared<Node>("CameraNode");
+        auto modelNode = std::make_shared<Node>("ModelNode");
+
+        auto camCompUP = std::make_unique<Camera3DComponent>();
+        Camera3DComponent* camComp = camCompUP.get();
+        camComp->AspectRatio = (float)width / (float)height;
+        camComp->FOV = 45.0f;
+        camComp->NearPlane = 0.01f;
+        camComp->FarPlane = 1000.0f;
+        camNode->AddComponent(std::move(camCompUP), "Camera3D");
+
+        struct ViewerModelComponent : public Component
+        {
+            std::shared_ptr<Model> model;
+            std::shared_ptr<Material> mat;
+            std::shared_ptr<ShaderProgram> prog;
+            ModelRenderer& renderer;
+            glm::mat4 viewProj = glm::mat4(1.0f);
+            glm::vec3 cameraPos = glm::vec3(0.0f);
+
+            ViewerModelComponent(ModelRenderer& r) : renderer(r) {}
+            virtual void Update(double Tick) override
+            {
+                if (model) model->UpdateRenderTransforms();
+            }
+            virtual void Render(double Alpha) override
+            {
+                if (!prog || !mat || !model) return;
+                prog->Bind();
+                GLint locCam = glGetUniformLocation(prog->GetID(), "uCameraPos");
+                if (locCam >= 0) glUniform3fv(locCam, 1, &cameraPos[0]);
+                mat->Bind(prog->GetID());
+                if (Lighting::ShaderUsesLighting(prog->GetID()))
+                    Lighting::Apply(prog->GetID());
+                model->Render(renderer, viewProj, prog->GetID());
+                prog->Unbind();
+            }
+        };
+
+        auto vmcUP = std::make_unique<ViewerModelComponent>(renderer);
+        ViewerModelComponent* vmc = vmcUP.get();
+        vmc->model = modelPtr;
+        vmc->mat = material;
+        vmc->prog = program;
+        modelNode->AddComponent(std::move(vmcUP), "ViewerModel");
+
+        rootNode->AddChild(camNode);
+        rootNode->AddChild(modelNode);
+
         while (running && window.IsOpen())
         {
+            // Was faster at the time to use SDL events directly than the Input System while making this
             SDL_Event ev;
             while (SDL_PollEvent(&ev))
             {
@@ -147,26 +205,27 @@ int main(int argc, char** argv)
                 }
             }
 
+
             glm::vec3 camDir;
             camDir.x = cosf(pitch) * sinf(yaw);
             camDir.y = sinf(pitch);
             camDir.z = cosf(pitch) * cosf(yaw);
             glm::vec3 camPos = center + camDir * distance;
 
-            glm::mat4 proj = glm::perspective(glm::radians(45.0f), (float)width / (float)height, 0.01f, 1000.0f);
-            glm::mat4 view = glm::lookAt(camPos, center, glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::mat4 viewProj = proj * view;
+            camComp->Position = camPos;
+            glm::vec3 forward = glm::normalize(center - camPos);
+            camComp->Pitch = glm::degrees(asin(glm::clamp(forward.y, -1.0f, 1.0f)));
+            camComp->Yaw = glm::degrees(atan2(forward.z, forward.x));
+            camComp->AspectRatio = (float)width / (float)height;
+            camComp->Update(0.0);
+
+            vmc->viewProj = camComp->GetViewProjMatrix();
+            vmc->cameraPos = camComp->Position;
 
             GL::ClearBuffers();
 
-            program.Bind();
-
-            GLint locCam = glGetUniformLocation(program.GetID(), "uCameraPos");
-            if (locCam >= 0) glUniform3fv(locCam, 1, &camPos[0]);
-
-            material.Bind(program.GetID());
-
-            model.Render(renderer, viewProj, program.GetID());
+            rootNode->UpdateNode(0.0);
+            rootNode->RenderNode(0.0);
 
             window.SwapBuffers();
             SDL_Delay(1);
