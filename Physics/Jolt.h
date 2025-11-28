@@ -24,5 +24,8 @@ JPH_SUPPRESS_WARNINGS
 using namespace JPH;
 using namespace JPH::literals;
 
-inline Vec3 ToJolt(const glm::vec3& v) { return Vec3(v.x, v.y, v.z); }
-inline glm::vec3 ToGLM(const Vec3& v) { return glm::vec3(v.GetX(), v.GetY(), v.GetZ()); }
+namespace Physics
+{
+    inline Vec3 ToJolt(const glm::vec3& v) { return Vec3(v.x, v.y, v.z); }
+    inline glm::vec3 ToGLM(const Vec3& v) { return glm::vec3(v.GetX(), v.GetY(), v.GetZ()); }
+}
