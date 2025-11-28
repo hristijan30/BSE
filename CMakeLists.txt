@@ -18,7 +18,7 @@ find_package(OpenAL REQUIRED)
 find_package(Boost CONFIG REQUIRED)
 find_package(assimp REQUIRED)
 
-add_subdirectory("ThirdParty/ReactPhysics3d")
+add_subdirectory("ThirdParty/JoltPhysics/Build")
 
 if(NOT SDL3_FOUND)
     message(WARNING "SDL3 not found — using ThirdParty/SDL3 and raw .lib")
@@ -68,11 +68,7 @@ set(NODE_SOURCE
 )
 
 set(PHYSICS_SOURCE
-    "Physics/React.h"
-    "Physics/PhysicsMaterial.cpp"
-    "Physics/PhysicsMaterial.h"
-    "Physics/PhysicsBody.cpp"
-    "Physics/PhysicsBody.h"
+    "Physics/Jolt.h"
 )
 
 set(RENDERER_SOURCE
@@ -146,11 +142,11 @@ if(WIN32)
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            reactphysics3d
             Boost::boost
             ws2_32
             mswsock
             assimp::assimp
+            Jolt
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -159,11 +155,11 @@ if(WIN32)
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            reactphysics3d
             Boost::boost
             ws2_32
             mswsock
             assimp::assimp
+            Jolt
         )
     endif()
 else()
@@ -174,9 +170,9 @@ else()
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            reactphysics3d
             Boost::boost
             assimp::assimp
+            Jolt
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -185,9 +181,9 @@ else()
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            reactphysics3d
             Boost::boost
             assimp::assimp
+            Jolt
         )
     endif()
 endif()

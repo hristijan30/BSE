@@ -1,9 +1,9 @@
-[submodule "ThirdParty/ReactPhysics3D"]
-	path = ThirdParty/ReactPhysics3D
-	url = https://github.com/DanielChappuis/reactphysics3d.git
 [submodule "ThirdParty/Nuklear"]
 	path = ThirdParty/Nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
 [submodule "ThirdParty/SDL3"]
 	path = ThirdParty/SDL3
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "ThirdParty/JoltPhysics"]
+	path = ThirdParty/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics.git
