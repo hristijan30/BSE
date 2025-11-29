@@ -43,11 +43,5 @@ namespace BSE
         m_shuttingDown.store(true, std::memory_order_release);
         WaitAll();
     }
-
-    void ThreadPool::WaitAll()
-    {
-        m_taskGroup.wait();
-    }
-
 }
 

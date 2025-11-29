@@ -74,7 +74,10 @@ namespace BSE
             });
         }
 
-        void WaitAll();
+        void WaitAll()
+        {
+            m_taskGroup.wait();
+        }
         size_t GetThreadCount() const noexcept { return m_threadCount; }
 
     private:
