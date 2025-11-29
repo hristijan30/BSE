@@ -25,8 +25,11 @@
 
 JPH_SUPPRESS_WARNINGS
 
-namespace Physics
+namespace BSE
 {
-    inline JPH::Vec3 ToJolt(const glm::vec3& v) { return JPH::Vec3(v.x, v.y, v.z); }
-    inline glm::vec3 ToGLM(const JPH::Vec3& v) { return glm::vec3(v.GetX(), v.GetY(), v.GetZ()); }
+    namespace Physics
+    {
+        inline JPH::Vec3 ToJolt(const glm::vec3& v) { return JPH::Vec3(v.x, v.y, v.z); }
+        inline glm::vec3 ToGLM(const JPH::Vec3& v) { return glm::vec3(v.GetX(), v.GetY(), v.GetZ()); }
+    }
 }
