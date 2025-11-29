@@ -14,6 +14,10 @@
 #include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/Shape/CylinderShape.h"
 #include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/Shape/ConvexShape.h"
 #include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/Shape/MeshShape.h"
+#include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/ObjectLayerPairFilterMask.h"
+#include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/ObjectLayerPairFilterTable.h"
+#include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/BroadPhase/BroadPhase.h"
+#include "../ThirdParty/JoltPhysics/Jolt/Physics/Collision/BroadPhase/BroadPhaseBruteForce.h"
 #include "../ThirdParty/JoltPhysics/Jolt/Physics/Body/BodyCreationSettings.h"
 #include "../ThirdParty/JoltPhysics/Jolt/Physics/Body/BodyActivationListener.h"
 
@@ -21,11 +25,8 @@
 
 JPH_SUPPRESS_WARNINGS
 
-using namespace JPH;
-using namespace JPH::literals;
-
 namespace Physics
 {
-    inline Vec3 ToJolt(const glm::vec3& v) { return Vec3(v.x, v.y, v.z); }
-    inline glm::vec3 ToGLM(const Vec3& v) { return glm::vec3(v.GetX(), v.GetY(), v.GetZ()); }
+    inline JPH::Vec3 ToJolt(const glm::vec3& v) { return JPH::Vec3(v.x, v.y, v.z); }
+    inline glm::vec3 ToGLM(const JPH::Vec3& v) { return glm::vec3(v.GetX(), v.GetY(), v.GetZ()); }
 }

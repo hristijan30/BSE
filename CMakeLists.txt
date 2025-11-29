@@ -69,6 +69,8 @@ set(NODE_SOURCE
 
 set(PHYSICS_SOURCE
     "Physics/Jolt.h"
+    "Physics/Physics.cpp"
+    "Physics/Physics.h"
 )
 
 set(RENDERER_SOURCE
