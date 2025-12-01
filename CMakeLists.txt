@@ -71,6 +71,9 @@ set(PHYSICS_SOURCE
     "Physics/Jolt.h"
     "Physics/Physics.cpp"
     "Physics/Physics.h"
+    "Physics/PhysicsMaterial.h"
+    "Physics/PhysicsBody.cpp"
+    "Physics/PhysicsBody.h"
 )
 
 set(RENDERER_SOURCE

@@ -52,7 +52,7 @@ namespace BSE
     void PhysicsCore::Initialize()
     {
         unsigned int cores = Engine::GetCPUThreadCount();
-        unsigned int physicsThreads = std::max<unsigned int>(1u, cores / 2u);
+        unsigned int physicsThreads = std::clamp(cores / 2, 2u, 4u);
 
         m_TempAllocator = std::make_unique<JPH::TempAllocatorImpl>(10 * 1024 * 1024);
         m_JobSystem = std::make_unique<JPH::JobSystemThreadPool>(1024, 256, physicsThreads);
@@ -70,8 +70,8 @@ namespace BSE
         m_ObjectVsBroadPhaseLayerFilter = std::make_unique<SimpleObjectVsBroadPhaseLayerFilter>();
 
         m_PhysicsSystem->Init(
-            1000,
-            64,
+            2000,
+            512,
             1000,
             2000,
             *m_BroadPhaseLayerInterface,
