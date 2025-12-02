@@ -62,8 +62,7 @@ namespace BSE
         std::shared_ptr<PhysicsShape> GetShape() const;
         std::shared_ptr<PhysicsMaterial> GetMaterial() const;
 
-        void AttachModel(BSE::Model* model);
-        void DetachModel();
+        void AttachModel(BSE::Model& model);
 
         void SyncModelFromPhysics(JPH::BodyInterface &bodyInterface);
         void SyncPhysicsFromModel(JPH::BodyInterface &bodyInterface, float tick);
@@ -75,6 +74,6 @@ namespace BSE
 
         JPH::BodyID m_bodyID = JPH::BodyID();
 
-        BSE::Model* m_model = nullptr;
+        BSE::Model& m_model;
     };
 }

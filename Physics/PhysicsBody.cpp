@@ -112,35 +112,24 @@ namespace BSE
         return m_material;
     }
 
-    void PhysicsBody::AttachModel(BSE::Model* model)
+    void PhysicsBody::AttachModel(BSE::Model& model)
     {
         m_model = model;
     }
 
-    void PhysicsBody::DetachModel()
-    {
-        m_model = nullptr;
-    }
-
     void PhysicsBody::SyncModelFromPhysics(JPH::BodyInterface &bodyInterface)
     {
-        if (m_model == nullptr || m_bodyID.IsInvalid())
-            return;
-
         glm::vec3 pos  = Physics::FromJolt(bodyInterface.GetPosition(m_bodyID));
         glm::quat rot  = Physics::FromJolt(bodyInterface.GetRotation(m_bodyID));
 
-        m_model->SetPosition(pos);
-        m_model->SetRotation(rot);
+        m_model.SetPosition(pos);
+        m_model.SetRotation(rot);
     }
 
     void PhysicsBody::SyncPhysicsFromModel(JPH::BodyInterface &bodyInterface, float tick)
     {
-        if (m_model == nullptr || m_bodyID.IsInvalid())
-            return;
-
-        JPH::Vec3 jpos = Physics::ToJolt(m_model->GetPosition());
-        JPH::Quat jrot = Physics::ToJolt(m_model->GetRotation());
+        JPH::Vec3 jpos = Physics::ToJolt(m_model.GetPosition());
+        JPH::Quat jrot = Physics::ToJolt(m_model.GetRotation());
 
         bodyInterface.MoveKinematic(m_bodyID, jpos, jrot, tick);
     }
