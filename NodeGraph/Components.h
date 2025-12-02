@@ -3,9 +3,11 @@
 #include "../Renderer/Model.h"
 #include "../Renderer/Material.h"
 #include "../Renderer/Shader.h"
+#include "../Renderer/Lighting.h"
+
+#include "../Sound/Sound.h"
 
 #include "Node.h"
-#include "../Renderer/Lighting.h"
 
 namespace BSE
 {
@@ -230,5 +232,60 @@ namespace BSE
         {
             ProjectionMatrix = glm::ortho(Left, Right, Bottom, Top, NearPlane, FarPlane);
         }
+    };
+
+    struct SoundComponent : Component
+    {
+        unsigned int SoundID = 0;
+
+        void SetSoundData(std::shared_ptr<SoundBuffer> buffer, std::shared_ptr<SoundSource> source)
+        {
+            this->buffer = buffer;
+            this->source = source;
+
+            if (this->source && this->buffer)
+            {
+                this->source->AttachBuffer(*this->buffer);
+            }
+        }
+
+        void SetSoundProperties(bool loop, float gain, float pitch, const glm::vec3& position, const glm::vec3& velocity)
+        {
+            if (source)
+            {
+                source->SetLooping(loop);
+                source->SetGain(gain);
+                source->SetPitch(pitch);
+                source->SetPosition(position);
+                source->SetVelocity(velocity);
+            }
+        }
+
+        void PlaySound()
+        {
+            if (source)
+            {
+                source->Play();
+            }
+        }
+
+        void PauseSound()
+        {
+            if (source)
+            {
+                source->Pause();
+            }
+        }
+
+        void StopSound()
+        {
+            if (source)
+            {
+                source->Stop();
+            }
+        }
+
+        std::shared_ptr<SoundBuffer> buffer;
+        std::shared_ptr<SoundSource> source;
     };
 }
