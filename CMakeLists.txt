@@ -94,6 +94,12 @@ set(RENDERER_SOURCE
     "Renderer/Texture2D.h"
 )
 
+set(SCRIPTING_SOURCE
+    "Scripting/Lua.h"
+    "Scripting/LuaCore.cpp"
+    "Scripting/LuaCore.h"
+)
+
 set(SOUND_SOURCE
     "Sound/OpenAL.h"
     "Sound/Sound.cpp"
@@ -116,6 +122,7 @@ if(WIN32)
         "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
+        "${SCRIPTING_SOURCE}"
         "${SOUND_SOURCE}"
         "${THREADING_SOURCE}"
     )
@@ -128,6 +135,7 @@ else()
         "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
+        "${SCRIPTING_SOURCE}"
         "${SOUND_SOURCE}"
         "${THREADING_SOURCE}"
     )
