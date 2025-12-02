@@ -15,6 +15,7 @@ find_package(SDL3 REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
+find_package(Lua REQUIRED)
 find_package(Boost CONFIG REQUIRED)
 find_package(assimp REQUIRED)
 
@@ -160,6 +161,7 @@ if(WIN32)
             mswsock
             assimp::assimp
             Jolt
+            Lua
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -173,6 +175,7 @@ if(WIN32)
             mswsock
             assimp::assimp
             Jolt
+            Lua
         )
     endif()
 else()
@@ -186,6 +189,7 @@ else()
             Boost::boost
             assimp::assimp
             Jolt
+            Lua
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -197,6 +201,7 @@ else()
             Boost::boost
             assimp::assimp
             Jolt
+            Lua
         )
     endif()
 endif()
