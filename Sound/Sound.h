@@ -48,4 +48,14 @@ namespace BSE
     private:
         ALuint m_source = 0;
     };
+
+    class DLL_EXPORT SoundListener
+    {
+    public:
+        static void SetPosition(const glm::vec3& pos);
+        static void SetVelocity(const glm::vec3& vel);
+        static void SetOrientation(const glm::vec3& at, const glm::vec3& up);
+        static void SetOrientation(const glm::quat& rot);
+        static void SetGain(float gain);
+    };
 }

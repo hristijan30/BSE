@@ -150,4 +150,32 @@ namespace BSE
         alGetSourcei(m_source, AL_SOURCE_STATE, &state);
         return state == AL_PLAYING;
     }
+
+    void SoundListener::SetPosition(const glm::vec3& pos)
+    {
+        alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
+    }
+
+    void SoundListener::SetVelocity(const glm::vec3& vel)
+    {
+        alListener3f(AL_VELOCITY, vel.x, vel.y, vel.z);
+    }
+
+    void SoundListener::SetOrientation(const glm::vec3& at, const glm::vec3& up)
+    {
+        float ori[6] = { at.x, at.y, at.z, up.x, up.y, up.z };
+        alListenerfv(AL_ORIENTATION, ori);
+    }
+
+    void SoundListener::SetOrientation(const glm::quat& rot)
+    {
+        glm::vec3 forward = rot * glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 up      = rot * glm::vec3(0.0f, 1.0f,  0.0f);
+        SetOrientation(forward, up);
+    }
+
+    void SoundListener::SetGain(float gain)
+    {
+        alListenerf(AL_GAIN, gain);
+    }
 }
