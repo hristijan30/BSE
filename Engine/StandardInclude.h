@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <optional>
+#include <type_traits>
+
 #include <cmath>
 
 #include <functional>
