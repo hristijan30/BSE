@@ -52,20 +52,4 @@ namespace BSE
             m_device = nullptr;
         }
     }
-
-    void SoundManager::SetListenerPosition(const glm::vec3& pos)
-    {
-        alListener3f(AL_POSITION, pos.x, pos.y, pos.z);
-    }
-
-    void SoundManager::SetListenerOrientation(const glm::vec3& forward, const glm::vec3& up)
-    {
-        float ori[6] = { forward.x, forward.y, forward.z,  up.x, up.y, up.z };
-        alListenerfv(AL_ORIENTATION, ori);
-    }
-
-    void SoundManager::SetListenerVelocity(const glm::vec3& vel)
-    {
-        alListener3f(AL_VELOCITY, vel.x, vel.y, vel.z);
-    }
 }
