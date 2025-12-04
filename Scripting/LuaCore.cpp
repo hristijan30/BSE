@@ -95,5 +95,30 @@ namespace BSE
 
         return true;
     }
-}
 
+    bool LuaEngine::RegisterCFunction(const std::string& name, lua_CFunction func)
+    {
+        if (!m_LuaCore) return false;
+        lua_State* L = m_LuaCore->GetLuaState();
+        if (!L) return false;
+
+        lua_pushcfunction(L, func);
+        lua_setglobal(L, name.c_str());
+        return true;
+    }
+
+    int LuaEngine::FunctionTrampoline(lua_State* L)
+    {
+        void* upv = lua_touserdata(L, lua_upvalueindex(1));
+        if (!upv)
+        {
+            return luaL_error(L, "LuaEngine: internal error - function wrapper missing");
+        }
+        auto storedPtr = *static_cast<std::function<int(lua_State*)>**>(upv);
+        if (!storedPtr)
+        {
+            return luaL_error(L, "LuaEngine: internal error - function wrapper null");
+        }
+        return (*storedPtr)(L);
+    }
+}
