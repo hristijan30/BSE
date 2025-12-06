@@ -134,6 +134,17 @@ namespace BSE
             return components.erase(compName) > 0;
         }
 
+        std::unique_ptr<Component> ExtractComponent(const std::string& compName)
+        {
+            auto it = components.find(compName);
+            if (it == components.end())
+                return nullptr;
+
+            std::unique_ptr<Component> comp = std::move(it->second);
+            components.erase(it);
+            return comp;
+        }
+
     private:
         std::string name;
         std::unordered_map<std::string, std::shared_ptr<Node>> childrenByName;

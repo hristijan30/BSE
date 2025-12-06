@@ -53,7 +53,6 @@ namespace BSE
         void BeginReadPayload(MessageHeader header);
         void DoWriteNext();
 
-    private:
         boost::asio::any_io_executor m_executor;
         std::unique_ptr<boost::asio::ip::tcp::socket> m_socket;
         boost::asio::strand<boost::asio::any_io_executor> m_strand;

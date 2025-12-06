@@ -40,7 +40,6 @@ namespace BSE
         void OnNewConnection(std::shared_ptr<Connection> conn);
         void RemoveClient(ClientId id);
 
-    private:
         ThreadingSystem& m_threadSystem;
         uint16_t m_port;
         std::string m_address;

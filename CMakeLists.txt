@@ -95,12 +95,6 @@ set(RENDERER_SOURCE
     "Renderer/Texture2D.h"
 )
 
-set(SCRIPTING_SOURCE
-    "Scripting/Lua.h"
-    "Scripting/LuaCore.cpp"
-    "Scripting/LuaCore.h"
-)
-
 set(SOUND_SOURCE
     "Sound/OpenAL.h"
     "Sound/Sound.cpp"
@@ -123,7 +117,6 @@ if(WIN32)
         "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
-        "${SCRIPTING_SOURCE}"
         "${SOUND_SOURCE}"
         "${THREADING_SOURCE}"
     )
@@ -136,7 +129,6 @@ else()
         "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
         "${RENDERER_SOURCE}"
-        "${SCRIPTING_SOURCE}"
         "${SOUND_SOURCE}"
         "${THREADING_SOURCE}"
     )
@@ -161,7 +153,6 @@ if(WIN32)
             mswsock
             assimp::assimp
             Jolt
-            Lua
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -175,7 +166,6 @@ if(WIN32)
             mswsock
             assimp::assimp
             Jolt
-            Lua
         )
     endif()
 else()
@@ -189,7 +179,6 @@ else()
             Boost::boost
             assimp::assimp
             Jolt
-            Lua
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -201,7 +190,6 @@ else()
             Boost::boost
             assimp::assimp
             Jolt
-            Lua
         )
     endif()
 endif()

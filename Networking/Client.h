@@ -59,7 +59,6 @@ namespace BSE
         RequestId NextRequestId();
         void FailPendingRequests();
 
-    private:
         ThreadingSystem& m_threadSystem;
 
         boost::asio::io_context m_ioContext;
