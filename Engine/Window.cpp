@@ -2,8 +2,8 @@
 
 namespace BSE
 {
-    Window::Window(const char* title, int width, int height, bool resizable, bool fullscreen)
-        : m_title(title), m_width(width), m_height(height), m_resizable(resizable), m_fullscreen(fullscreen),
+    Window::Window(const char* title, int width, int height, bool resizable, bool fullscreen, bool vsync)
+        : m_title(title), m_width(width), m_height(height), m_resizable(resizable), m_fullscreen(fullscreen), m_vsync(vsync),
           m_window(nullptr), m_glContext(nullptr)
     {
     }
@@ -46,9 +46,12 @@ namespace BSE
             throw std::runtime_error("SDL_GL_MakeCurrent failed: " + std::string(SDL_GetError()));
         }
 
-        if (SDL_GL_SetSwapInterval(1) < 0)
+        if (m_vsync == true)
         {
-            throw std::runtime_error("SDL_GL_SetSwapInterval failed: " + std::string(SDL_GetError()));
+            if (SDL_GL_SetSwapInterval(1) < 0)
+            {
+                throw std::runtime_error("SDL_GL_SetSwapInterval failed: " + std::string(SDL_GetError()));
+            }
         }
 
         GL::SetDefaultState();

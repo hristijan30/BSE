@@ -11,7 +11,7 @@ namespace BSE
     class DLL_EXPORT Window
     {
     public:
-        Window(const char* title, int width, int height, bool resizable = true, bool fullscreen = false);
+        Window(const char* title, int width, int height, bool resizable = true, bool fullscreen = false, bool vsync = true);
         ~Window();
 
         void Create();
@@ -27,6 +27,7 @@ namespace BSE
         int m_height;
         bool m_resizable;
         bool m_fullscreen;
+        bool m_vsync;
 
         SDL_Window* m_window;
         SDL_GLContext m_glContext;
