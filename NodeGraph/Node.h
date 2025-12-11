@@ -12,12 +12,12 @@ namespace BSE
         virtual void DeleteComponentData() {}
 
         // Alpha and tick are used to make the program run at a fixed update time 
-            //but render wise can run at a much larger framerate whit out braking the update code by running to fast
+            // but render wise can run at a much larger framerate without breaking the update code by running too fast
         virtual void Update(double Tick) {}
         virtual void Render(double Alpha) {}
     };
 
-    class DLL_EXPORT Node
+    class DLL_EXPORT Node : public std::enable_shared_from_this<Node>
     {
     public:
         explicit Node(std::string name)
@@ -117,7 +117,7 @@ namespace BSE
             return components.find(compName) != components.end();
         }
 
-        bool AddComponent(std::unique_ptr<Component> component, const std::string& compName)
+        bool AddComponent(std::shared_ptr<Component> component, const std::string& compName)
         {
             if (!component)
                 return false;
@@ -129,18 +129,43 @@ namespace BSE
             return true;
         }
 
+        template<typename T, typename... Args>
+        std::shared_ptr<T> AddComponent(const std::string& compName, Args&&... args)
+        {
+            static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
+            if (HasComponent(compName))
+                return nullptr;
+
+            auto comp = std::make_shared<T>(std::forward<Args>(args)...);
+            components[compName] = comp;
+            return comp;
+        }
+
+        std::shared_ptr<Component> GetComponent(const std::string& compName)
+        {
+            auto it = components.find(compName);
+            return (it == components.end()) ? nullptr : it->second;
+        }
+
+        template<typename T>
+        std::shared_ptr<T> GetComponentAs(const std::string& compName)
+        {
+            static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
+            return std::dynamic_pointer_cast<T>(GetComponent(compName));
+        }
+
         bool RemoveComponent(const std::string& compName)
         {
             return components.erase(compName) > 0;
         }
 
-        std::unique_ptr<Component> ExtractComponent(const std::string& compName)
+        std::shared_ptr<Component> ExtractComponent(const std::string& compName)
         {
             auto it = components.find(compName);
             if (it == components.end())
                 return nullptr;
 
-            std::unique_ptr<Component> comp = std::move(it->second);
+            auto comp = it->second;
             components.erase(it);
             return comp;
         }
@@ -148,6 +173,6 @@ namespace BSE
     private:
         std::string name;
         std::unordered_map<std::string, std::shared_ptr<Node>> childrenByName;
-        std::unordered_map<std::string, std::unique_ptr<Component>> components;
+        std::unordered_map<std::string, std::shared_ptr<Component>> components;
     };
 }
