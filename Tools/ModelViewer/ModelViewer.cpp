@@ -115,7 +115,7 @@ int main(int argc, char** argv)
         auto camNode = std::make_shared<Node>("CameraNode");
         auto modelNode = std::make_shared<Node>("ModelNode");
 
-        auto camCompUP = std::make_unique<Camera3DComponent>();
+        auto camCompUP = std::make_shared<Camera3DComponent>();
         Camera3DComponent* camComp = camCompUP.get();
         camComp->AspectRatio = (float)width / (float)height;
         camComp->FOV = 45.0f;
@@ -151,7 +151,7 @@ int main(int argc, char** argv)
             }
         };
 
-        auto vmcUP = std::make_unique<ViewerModelComponent>(renderer);
+        auto vmcUP = std::make_shared<ViewerModelComponent>(renderer);
         ViewerModelComponent* vmc = vmcUP.get();
         vmc->model = modelPtr;
         vmc->mat = material;

@@ -140,22 +140,22 @@ namespace BSE
     struct Camera3DComponent : Component
     {
         glm::vec3 Position = glm::vec3(0.0f);
-        glm::vec3 Forward  = glm::vec3(0.0f, 0.0f, -1.0f);
-        glm::vec3 Up       = glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::vec3 Right    = glm::vec3(1.0f, 0.0f, 0.0f);
+        glm::vec3 Forward = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 Up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 Right = glm::vec3(1.0f, 0.0f, 0.0f);
 
-        float Yaw   = -90.0f;
+        float Yaw = -90.0f;
         float Pitch = 0.0f;
-        float FOV   = 45.0f;
+        float FOV = 45.0f;
 
         float NearPlane = 0.1f;
-        float FarPlane  = 100.0f;
+        float FarPlane = 100.0f;
 
         float AspectRatio = 16.0f / 9.0f;
 
-        glm::mat4 ViewMatrix       = glm::mat4(1.0f);
+        glm::mat4 ViewMatrix = glm::mat4(1.0f);
         glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
-        glm::mat4 ViewProjMatrix   = glm::mat4(1.0f);
+        glm::mat4 ViewProjMatrix = glm::mat4(1.0f);
 
         virtual void Update(double Tick) override
         {
