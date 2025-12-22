@@ -179,7 +179,7 @@ namespace BSE
             Forward = glm::normalize(front);
 
             Right = glm::normalize(glm::cross(Forward, glm::vec3(0.0f, 1.0f, 0.0f)));
-            Up    = glm::normalize(glm::cross(Right, Forward));
+            Up  = glm::normalize(glm::cross(Right, Forward));
         }
 
         void UpdateViewMatrix()
@@ -196,20 +196,20 @@ namespace BSE
     struct Camera2DComponent : Component
     {
         glm::vec3 Position = glm::vec3(0.0f);
-        glm::vec3 Up       = glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::vec3 Forward  = glm::vec3(0.0f, 0.0f, -1.0f);
+        glm::vec3 Up  = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 Forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
-        float Left   = -1.0f;
-        float Right  =  1.0f;
+        float Left = -1.0f;
+        float Right =  1.0f;
         float Bottom = -1.0f;
-        float Top    =  1.0f;
+        float Top =  1.0f;
 
         float NearPlane = -1.0f;
-        float FarPlane  =  1.0f;
+        float FarPlane =  1.0f;
 
-        glm::mat4 ViewMatrix       = glm::mat4(1.0f);
+        glm::mat4 ViewMatrix = glm::mat4(1.0f);
         glm::mat4 ProjectionMatrix = glm::mat4(1.0f);
-        glm::mat4 ViewProjMatrix   = glm::mat4(1.0f);
+        glm::mat4 ViewProjMatrix = glm::mat4(1.0f);
 
         virtual void Update(double Tick) override
         {

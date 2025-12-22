@@ -9,9 +9,9 @@ namespace BSE
     enum class LightType : int
     {
         Directional = 0,
-        Point       = 1,
-        Spot        = 2,
-        Area        = 3
+        Point = 1,
+        Spot = 2,
+        Area = 3
     };
 
     struct LightData
@@ -39,7 +39,8 @@ namespace BSE
         static void SetMode(Mode m);
         static Mode GetMode();
 
-        static const int MaxLights = 16;
+        static constexpr int MaxLights = 16;
+        static void SetMaxLights(int maxLights);
 
         static void Clear();
         static void AddLight(const LightData& light);
@@ -54,5 +55,7 @@ namespace BSE
         static glm::vec3 s_ambientColor;
         static float s_ambientIntensity;
         static Mode s_mode;
+
+        static int s_maxLights;
     };
 }

@@ -1,5 +1,6 @@
 #include "Lighting.h"
 #include <sstream>
+#include <algorithm>
 
 namespace BSE
 {
@@ -7,7 +8,21 @@ namespace BSE
     glm::vec3 Lighting::s_ambientColor = glm::vec3(0.03f);
     float Lighting::s_ambientIntensity = 1.0f;
     Lighting::Mode Lighting::s_mode = Lighting::Mode::Lit;
+
+    int Lighting::s_maxLights = Lighting::MaxLights;
+
     static bool s_frameStarted = false;
+
+    void Lighting::SetMaxLights(int maxLights)
+    {
+        int clamped = std::max(1, std::min(maxLights, MaxLights));
+        s_maxLights = clamped;
+
+        if ((int)s_lights.size() > s_maxLights)
+        {
+            s_lights.resize(s_maxLights);
+        }
+    }
 
     void Lighting::Clear()
     {
@@ -23,8 +38,9 @@ namespace BSE
             s_frameStarted = true;
         }
 
-        if ((int)s_lights.size() >= MaxLights)
+        if ((int)s_lights.size() >= s_maxLights)
             return;
+
         s_lights.push_back(light);
     }
 
@@ -54,7 +70,9 @@ namespace BSE
     void Lighting::Apply(GLuint shaderProgram)
     {
         if (shaderProgram == 0) return;
+
         s_frameStarted = false;
+
         GLint loc = glGetUniformLocation(shaderProgram, "uAmbientColor");
         if (loc >= 0) glUniform3fv(loc, 1, &s_ambientColor[0]);
         loc = glGetUniformLocation(shaderProgram, "uAmbientIntensity");
@@ -63,10 +81,11 @@ namespace BSE
         GLint locMode = glGetUniformLocation(shaderProgram, "uLightingMode");
         if (locMode >= 0) glUniform1i(locMode, (int)s_mode);
 
+        int lightCountToSend = std::min<int>((int)s_lights.size(), s_maxLights);
         GLint locCount = glGetUniformLocation(shaderProgram, "uLightCount");
-        if (locCount >= 0) glUniform1i(locCount, (int)s_lights.size());
+        if (locCount >= 0) glUniform1i(locCount, lightCountToSend);
 
-        for (int i = 0; i < (int)s_lights.size(); ++i)
+        for (int i = 0; i < lightCountToSend; ++i)
         {
             const LightData& L = s_lights[i];
 
