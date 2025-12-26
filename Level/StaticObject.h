@@ -5,7 +5,7 @@
 
 namespace BSE
 {
-    class StaticObject
+    class DLL_EXPORT StaticObject
     {
     public:
         StaticObject() = default;
