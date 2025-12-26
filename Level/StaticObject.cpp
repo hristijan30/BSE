@@ -5,7 +5,10 @@ namespace BSE
     void StaticObject::Initialize(const std::string& nodeName, std::string modelPath, std::shared_ptr<Material> mat, std::shared_ptr<ShaderProgram> shaProg)
     {
         m_model = std::make_shared<Model>();
-        m_model->LoadFromFile(modelPath);
+        if (!modelPath.empty())
+        {
+            m_model->LoadFromFile(modelPath);
+        }
 
         m_modelComponent = std::make_shared<ModelComponent>();
         m_modelComponent->SetModelData(m_model, mat, shaProg);
