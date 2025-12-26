@@ -2,6 +2,11 @@
 
 #include "Time.h"
 
+#ifdef _WIN32
+    #include <windows.h>
+    #include <shellapi.h>
+#endif
+
 namespace BSE
 {
     class DLL_EXPORT Engine
@@ -17,9 +22,6 @@ namespace BSE
     };
 
 #ifdef _WIN32
-    #include <windows.h>
-    #include <shellapi.h>
-
     inline bool CreateConsole()
     {
         if (AllocConsole())

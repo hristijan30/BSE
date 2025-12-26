@@ -13,7 +13,7 @@ namespace BSE
 {
     struct ModelComponent : Component
     {
-        virtual ~ModelComponent() = 0;
+        virtual ~ModelComponent() {}
 
         virtual void InitComponent() override {}
         virtual void DeleteComponentData() override {}
@@ -29,12 +29,12 @@ namespace BSE
             this->shaProg = shaProg;
         }
 
-        ModelRenderer& renderer;
+        ModelRenderer* renderer;
         glm::mat4 viewProjMatrix;
 
         void SetExtras(ModelRenderer& renderer, glm::mat4 viewProjMatrix)
         {
-            this->renderer = renderer;
+            this->renderer = &renderer;
             this->viewProjMatrix = viewProjMatrix;
         }
 
@@ -51,7 +51,7 @@ namespace BSE
             {
                 Lighting::Apply(this->shaProg->GetID());
             }
-            this->model->Render(this->renderer, this->viewProjMatrix, this->shaProg->GetID());
+            this->model->Render(*this->renderer, this->viewProjMatrix, this->shaProg->GetID());
             this->shaProg->Unbind();
         }
     };
