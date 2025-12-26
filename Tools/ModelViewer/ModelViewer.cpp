@@ -224,8 +224,15 @@ int main(int argc, char** argv)
 
             GL::ClearBuffers();
 
+            glEnable(GL_BLEND);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            glDepthMask(GL_FALSE);
+
             rootNode->UpdateNode(0.0);
             rootNode->RenderNode(0.0);
+
+            glDepthMask(GL_TRUE);
+            glDisable(GL_BLEND);
 
             window.SwapBuffers();
             SDL_Delay(1);

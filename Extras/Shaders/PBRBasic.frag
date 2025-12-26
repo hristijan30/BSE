@@ -1,4 +1,4 @@
-#version 330 core
+#version 460 core
 
 in vec3 vWorldPos;
 in vec3 vNormal;
@@ -7,6 +7,7 @@ in vec2 vUV;
 uniform vec3 uBaseColor;
 uniform float uMetallic;
 uniform float uRoughness;
+uniform float uTransparency;
 uniform vec3 uEmissionColor;
 uniform float uEmissionStrength;
 uniform float uSpecularStrength;
@@ -35,6 +36,8 @@ uniform sampler2D uRoughnessMap;
 uniform sampler2D uMetallicMap;
 uniform sampler2D uAOMap;
 uniform sampler2D uEmissiveMap;
+
+uniform float uAlphaCutoff;
 
 out vec4 FragColor;
 
@@ -76,31 +79,40 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0)
 void main()
 {
     vec3 N = normalize(vNormal);
+    vec3 V = normalize(uCameraPos - vWorldPos);
 
     vec3 dp1 = dFdx(vWorldPos);
     vec3 dp2 = dFdy(vWorldPos);
     vec2 duv1 = dFdx(vUV);
     vec2 duv2 = dFdy(vUV);
 
-    vec3 T = normalize(dp1 * duv2.y - dp2 * duv1.y);
-    vec3 B = normalize(-dp1 * duv2.x + dp2 * duv1.x);
+    vec3 T = dp1 * duv2.y - dp2 * duv1.y;
+    if (length(T) < 1e-6) {
+        vec3 up = abs(N.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);
+        T = cross(up, N);
+    }
+    T = normalize(T - N * dot(N, T));
+    vec3 B = normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
     vec3 nMap = texture(uNormalMap, vUV).rgb;
-    nMap = nMap * 2.0 - 1.0;
-    vec3 N_tangent = normalize(nMap);
-    vec3 N_world = normalize(TBN * N_tangent);
-
-    bool hasNormalMap = length(nMap - vec3(0.0,0.0,1.0)) > 0.001;
+    vec3 N_tangent = normalize(nMap * 2.0 - 1.0);
+    bool hasNormalMap = length(N_tangent - vec3(0.0,0.0,1.0)) > 0.001;
     if (hasNormalMap)
-        N = N_world;
+        N = normalize(TBN * N_tangent);
 
-    vec3 V = normalize(uCameraPos - vWorldPos);
+    vec4 diffuseSample = texture(uDiffuseMap, vUV);
+    vec3 albedo = uBaseColor * diffuseSample.rgb;
+    float diffuseAlpha = diffuseSample.a;
 
-    vec3 albedo = uBaseColor * texture(uDiffuseMap, vUV).rgb;
-    float metallic = uMetallic * texture(uMetallicMap, vUV).r;
+    float metallic = clamp(uMetallic * texture(uMetallicMap, vUV).r, 0.0, 1.0);
     float roughness = clamp(uRoughness * texture(uRoughnessMap, vUV).r, 0.05, 1.0);
     float ao = texture(uAOMap, vUV).r;
+
+    float alpha = clamp(diffuseAlpha * (1.0 - uTransparency), 0.0, 1.0);
+
+    if (alpha <= uAlphaCutoff)
+        discard;
 
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
@@ -126,52 +138,64 @@ void main()
                 vec3 toLight = uLightPos[i] - vWorldPos;
                 float dist = length(toLight);
                 Ldir = normalize(toLight);
-                float r = max(uLightRadius[i], 0.0001);
-                attenuation = 1.0 / max(1.0 + (dist * dist) / (r * r), 1.0);
+                float r = max(uLightRadius[i], 1e-4);
+
+                float invDist2 = 1.0 / max(dist * dist, 1e-6);
+                float range = dist / r;
+                float rangeAtten = 1.0 - smoothstep(0.9, 1.0, range);
+                attenuation = invDist2 * rangeAtten;
 
                 if (t == 2)
                 {
-                    float cosTheta = dot(normalize(-uLightDir[i]), Ldir);
+                    vec3 spotDir = normalize(-uLightDir[i]);
+                    float cosTheta = dot(spotDir, Ldir);
                     float inner = uLightInnerCone[i];
                     float outer = uLightOuterCone[i];
-                    float spot = clamp((cosTheta - outer) / max(inner - outer, 1e-4), 0.0, 1.0);
+                    float spot = 0.0;
+                    if (cosTheta > outer)
+                        spot = clamp((cosTheta - outer) / max(inner - outer, 1e-4), 0.0, 1.0);
                     attenuation *= spot;
                 }
                 else if (t == 3)
                 {
-                    Ldir = normalize(-uLightDir[i]);
-                    float area = max(0.0001, uLightAreaSize[i].x * uLightAreaSize[i].y);
-                    attenuation = 1.0 / max(area, 1.0);
+                    vec3 areaDir = normalize(-uLightDir[i]);
+                    float area = max(1e-4, uLightAreaSize[i].x * uLightAreaSize[i].y);
+                    float NdotArea = max(0.0, dot(N, areaDir));
+                    attenuation = (area * NdotArea) / max(dist * dist + 1.0, 1e-6);
+                    Ldir = areaDir;
                 }
             }
 
-            vec3 H = normalize(V + Ldir);
-
             float NdotL = max(dot(N, Ldir), 0.0);
+            if (NdotL <= 0.0) continue;
 
+            vec3 H = normalize(V + Ldir);
             float NDF = DistributionGGX(N, H, roughness);
             float G = GeometrySmith(N, V, Ldir, roughness);
             vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
             vec3 nominator = NDF * G * F;
-            float denominator = 4.0 * max(dot(N, V), 0.001) * max(dot(N, Ldir), 0.001);
-            vec3 specular = nominator / max(denominator, 0.001);
+            float denominator = 4.0 * max(dot(N, V), 1e-3) * max(NdotL, 1e-3);
+            vec3 specular = nominator / denominator;
 
             vec3 kS = F;
             vec3 kD = vec3(1.0) - kS;
             kD *= 1.0 - metallic;
 
-            Lo += (kD * albedo / PI + specular) * radiance * NdotL * attenuation;
+            specular *= uSpecularStrength;
+
+            Lo += (kD * albedo / PI * alpha + specular) * radiance * attenuation * NdotL;
         }
     }
 
-    vec3 ambient = uAmbientColor * uAmbientIntensity * albedo * ao;
-    vec3 emissive = uEmissionColor * uEmissionStrength * texture(uEmissiveMap, vUV).rgb;
+    vec3 ambient = uAmbientColor * uAmbientIntensity * albedo * ao * alpha;
+
+    vec3 emissive = uEmissionColor * uEmissionStrength * texture(uEmissiveMap, vUV).rgb * alpha;
 
     vec3 color = ambient + Lo + emissive;
 
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0/2.2));
+    color = pow(color, vec3(1.0 / 2.2));
 
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(color, alpha);
 }

@@ -52,6 +52,11 @@ set(INPUT_SOURCE
     "Input/InputManager.h"
 )
 
+set(LEVEL_SOURCE
+    "Level/StaticObject.cpp"
+    "Level/StaticObject.h"
+)
+
 set(NETWORKING_SOURCE
     "Networking/Cerialization.cpp"
     "Networking/Cerialization.h"
