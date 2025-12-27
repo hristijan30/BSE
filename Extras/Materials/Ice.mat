@@ -1,0 +1,15 @@
+diffuse Textures/IceDif.jpg
+normal Textures/IceNor.png
+roughness Textures/IceRog.jpg
+metallic Textures/IceMet.png
+ao null
+emissive null
+
+BaseColor 0.6 0.6 0.6
+EmissionColor 1.0 1.0 1.0
+
+Metallic 0.5
+Roughness 0.7
+Transparency 0.15
+EmissionStrength 0.4
+SpecularStrength 0.5

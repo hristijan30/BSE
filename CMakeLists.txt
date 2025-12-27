@@ -52,11 +52,6 @@ set(INPUT_SOURCE
     "Input/InputManager.h"
 )
 
-set(LEVEL_SOURCE
-    "Level/StaticObject.cpp"
-    "Level/StaticObject.h"
-)
-
 set(NETWORKING_SOURCE
     "Networking/Cerialization.cpp"
     "Networking/Cerialization.h"
@@ -118,7 +113,6 @@ if(WIN32)
         "${CORE_SOURCE}"
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
-        "${LEVEL_SOURCE}"
         "${NETWORKING_SOURCE}"
         "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"
@@ -131,7 +125,6 @@ else()
         "${CORE_SOURCE}"
         "${EVENT_SOURCE}"
         "${INPUT_SOURCE}"
-        "${LEVEL_SOURCE}"
         "${NETWORKING_SOURCE}"
         "${NODE_SOURCE}"
         "${PHYSICS_SOURCE}"

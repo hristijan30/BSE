@@ -289,4 +289,154 @@ namespace BSE
         std::shared_ptr<SoundBuffer> buffer;
         std::shared_ptr<SoundSource> source;
     };
+
+    struct TriggerActivatorComponent : Component
+    {
+        std::shared_ptr<Model> hostModel;
+
+        glm::vec3 position = glm::vec3(0.0f);
+        float scale = 1.0f;
+        glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+        void SetHostModel(std::shared_ptr<Model> model)
+        {
+            hostModel = model;
+            SyncWithHostModel();
+        }
+
+        void SetScale(float s)
+        {
+            scale = s;
+        }
+
+        void SyncWithHostModel()
+        {
+            if (hostModel)
+            {
+                position = hostModel->GetPosition();
+                rotation = hostModel->GetRotation();
+            }
+        }
+
+        std::array<glm::vec3, 8> GetAABBVertices() const
+        {
+            std::array<glm::vec3, 8> vertices;
+            float halfScale = scale * 0.5f;
+
+            vertices[0] = position + rotation * glm::vec3(-halfScale, -halfScale, -halfScale);
+            vertices[1] = position + rotation * glm::vec3( halfScale, -halfScale, -halfScale);
+            vertices[2] = position + rotation * glm::vec3( halfScale,  halfScale, -halfScale);
+            vertices[3] = position + rotation * glm::vec3(-halfScale,  halfScale, -halfScale);
+            vertices[4] = position + rotation * glm::vec3(-halfScale, -halfScale,  halfScale);
+            vertices[5] = position + rotation * glm::vec3( halfScale, -halfScale,  halfScale);
+            vertices[6] = position + rotation * glm::vec3( halfScale,  halfScale,  halfScale);
+            vertices[7] = position + rotation * glm::vec3(-halfScale,  halfScale,  halfScale);
+
+            return vertices;
+        }
+
+        virtual void Update(double Tick) override
+        {
+            SyncWithHostModel();
+        }
+    };
+
+    struct TriggerBoxComponent : Component
+    {
+        glm::vec3 position = glm::vec3(0.0f);
+        float scale = 1.0f;
+        glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+
+        void SetPosition(const glm::vec3& pos)
+        {
+            position = pos;
+        }
+
+        void SetScale(float s)
+        {
+            scale = s;
+        }
+
+        void SetRotation(const glm::quat& rot)
+        {
+            rotation = rot;
+        }
+
+        std::array<glm::vec3, 8> GetAABBVertices() const
+        {
+            std::array<glm::vec3, 8> vertices;
+            float halfScale = scale * 0.5f;
+
+            vertices[0] = position + rotation * glm::vec3(-halfScale, -halfScale, -halfScale);
+            vertices[1] = position + rotation * glm::vec3( halfScale, -halfScale, -halfScale);
+            vertices[2] = position + rotation * glm::vec3( halfScale,  halfScale, -halfScale);
+            vertices[3] = position + rotation * glm::vec3(-halfScale,  halfScale, -halfScale);
+            vertices[4] = position + rotation * glm::vec3(-halfScale, -halfScale,  halfScale);
+            vertices[5] = position + rotation * glm::vec3( halfScale, -halfScale,  halfScale);
+            vertices[6] = position + rotation * glm::vec3( halfScale,  halfScale,  halfScale);
+            vertices[7] = position + rotation * glm::vec3(-halfScale,  halfScale,  halfScale);
+
+            return vertices;
+        }
+
+        bool CheckIfOverlaps(const TriggerActivatorComponent& activator) const
+        {
+            auto boxVertices = GetAABBVertices();
+            auto activatorVertices = activator.GetAABBVertices();
+
+            glm::vec3 boxMin = boxVertices[0];
+            glm::vec3 boxMax = boxVertices[0];
+            for (const auto& v : boxVertices)
+            {
+                boxMin = glm::min(boxMin, v);
+                boxMax = glm::max(boxMax, v);
+            }
+
+            glm::vec3 activatorMin = activatorVertices[0];
+            glm::vec3 activatorMax = activatorVertices[0];
+            for (const auto& v : activatorVertices)
+            {
+                activatorMin = glm::min(activatorMin, v);
+                activatorMax = glm::max(activatorMax, v);
+            }
+
+            return (boxMin.x <= activatorMax.x && boxMax.x >= activatorMin.x) &&
+                   (boxMin.y <= activatorMax.y && boxMax.y >= activatorMin.y) &&
+                   (boxMin.z <= activatorMax.z && boxMax.z >= activatorMin.z);
+        }
+    };
+
+    struct TriggerSphereComponent : Component
+    {
+        glm::vec3 position = glm::vec3(0.0f);
+        float radius = 1.0f;
+
+        void SetPosition(const glm::vec3& pos)
+        {
+            position = pos;
+        }
+
+        void SetRadius(float r)
+        {
+            radius = r;
+        }
+
+        bool CheckIfOverlaps(const TriggerActivatorComponent& activator) const
+        {
+            auto activatorVertices = activator.GetAABBVertices();
+
+            float closestDistSq = std::numeric_limits<float>::max();
+            for (const auto& v : activatorVertices)
+            {
+                glm::vec3 diff = v - position;
+                float distSq = glm::dot(diff, diff);
+                if (distSq < closestDistSq)
+                {
+                    closestDistSq = distSq;
+                }
+            }
+
+            return closestDistSq <= (radius * radius);
+        }
+    };
 }

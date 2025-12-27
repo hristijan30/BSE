@@ -1,0 +1,15 @@
+diffuse null
+normal null
+roughness null
+metallic null
+ao null
+emissive null
+
+BaseColor 1.0 1.0 1.0
+EmissionColor 0.0 0.0 0.0
+
+Metallic 0.2
+Roughness 0.7
+Transparency 0.0
+EmissionStrength 0.0
+SpecularStrength 0.5

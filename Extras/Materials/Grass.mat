@@ -1,0 +1,15 @@
+diffuse Textures/GrassDif.jpg
+normal Textures/GrassNor.png
+roughness Textures/GrassRog.jpg
+metallic null
+ao null
+emissive null
+
+BaseColor 1.0 1.0 1.0
+EmissionColor 0.0 0.0 0.0
+
+Metallic 0.0
+Roughness 0.9
+Transparency 0.0
+EmissionStrength 0.0
+SpecularStrength 0.3
