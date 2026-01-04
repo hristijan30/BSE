@@ -66,6 +66,7 @@ set(NETWORKING_SOURCE
 set(NODE_SOURCE
     "NodeGraph/Components.h"
     "NodeGraph/Node.h"
+    "NodeGraph/Scene.h"
 )
 
 set(PHYSICS_SOURCE
