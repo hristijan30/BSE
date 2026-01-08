@@ -49,8 +49,8 @@ namespace BSE
 
             auto work = std::function<void()>(std::forward<Func>(task));
 
-            m_arena.enqueue([this, work = std::move(work)]() mutable {
-                m_taskGroup.run([work = std::move(work)]() mutable {
+            m_arena.enqueue([this, work = std::move(work)]() {
+                m_taskGroup.run([work = std::move(work)]() {
                     work();
                 });
             });
@@ -65,8 +65,8 @@ namespace BSE
             auto work = std::function<void()>(std::forward<Func>(task));
             auto completion = std::function<void()>(std::forward<Completion>(onComplete));
 
-            m_arena.enqueue([this, work = std::move(work), completion = std::move(completion)]() mutable {
-                m_taskGroup.run([this, work = std::move(work), completion = std::move(completion)]() mutable {
+            m_arena.enqueue([this, work = std::move(work), completion = std::move(completion)]() {
+                m_taskGroup.run([this, work = std::move(work), completion = std::move(completion)]() {
                     work();
 
                     m_threadingSystem.AddCompletedTask(completion);

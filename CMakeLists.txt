@@ -16,7 +16,6 @@ find_package(GLEW REQUIRED)
 find_package(TBB REQUIRED)
 find_package(OpenAL REQUIRED)
 find_package(Lua REQUIRED)
-find_package(Boost CONFIG REQUIRED)
 find_package(assimp REQUIRED)
 
 add_subdirectory("ThirdParty/JoltPhysics/Build")
@@ -53,14 +52,7 @@ set(INPUT_SOURCE
 )
 
 set(NETWORKING_SOURCE
-    "Networking/Cerialization.cpp"
-    "Networking/Cerialization.h"
-    "Networking/Client.cpp"
-    "Networking/Client.h"
-    "Networking/Connection.cpp"
-    "Networking/Connection.h"
-    "Networking/ServerMain.cpp"
-    "Networking/ServerMain.h"
+    # Reworking networking system
 )
 
 set(NODE_SOURCE
@@ -149,7 +141,6 @@ if(WIN32)
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            Boost::boost
             ws2_32
             mswsock
             assimp::assimp
@@ -162,7 +153,6 @@ if(WIN32)
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            Boost::boost
             ws2_32
             mswsock
             assimp::assimp
@@ -177,7 +167,6 @@ else()
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            Boost::boost
             assimp::assimp
             Jolt
         )
@@ -188,7 +177,6 @@ else()
             GLEW::GLEW
             TBB::tbb
             OpenAL::OpenAL
-            Boost::boost
             assimp::assimp
             Jolt
         )
