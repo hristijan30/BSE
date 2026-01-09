@@ -52,7 +52,15 @@ set(INPUT_SOURCE
 )
 
 set(NETWORKING_SOURCE
-    # Reworking networking system
+    "Networking/Client.cpp"
+    "Networking/Client.h"
+    "Networking/DataSerializer.cpp"
+    "Networking/DataSerializer.h"
+    "Networking/ENet.h"
+    "Networking/NetConfig.h"
+    "Networking/PacketTypes.h"
+    "Networking/Server.cpp"
+    "Networking/Server.h"
 )
 
 set(NODE_SOURCE
@@ -145,6 +153,7 @@ if(WIN32)
             mswsock
             assimp::assimp
             Jolt
+            ENet
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -157,6 +166,7 @@ if(WIN32)
             mswsock
             assimp::assimp
             Jolt
+            ENet
         )
     endif()
 else()
@@ -169,6 +179,7 @@ else()
             OpenAL::OpenAL
             assimp::assimp
             Jolt
+            ENet
         )
     else()
         target_link_libraries(BSE_Engine PUBLIC
@@ -179,6 +190,7 @@ else()
             OpenAL::OpenAL
             assimp::assimp
             Jolt
+            ENet
         )
     endif()
 endif()

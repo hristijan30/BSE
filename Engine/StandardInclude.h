@@ -30,3 +30,5 @@
 #include <vector>
 
 #include <atomic>
+
+#include <type_traits>
