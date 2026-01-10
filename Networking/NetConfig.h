@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../Engine/Define.h"
 #include "../Engine/StandardInclude.h"
 
 namespace BSE::Net
