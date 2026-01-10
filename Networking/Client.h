@@ -18,6 +18,7 @@ namespace BSE
 
         void Update(uint32_t timeoutMs = 0);
 
+        bool SendHandshake(const std::string& playerName);
         bool SendPacket(Net::PacketType type, const void* payload, size_t payloadLen);
 
         bool IsConnected() const;

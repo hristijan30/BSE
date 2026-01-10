@@ -125,6 +125,23 @@ namespace BSE
         }
     }
 
+    bool NetClient::SendHandshake(const std::string& playerName)
+    {
+        DataSerializer writer(Net::NET_MAX_PACKET_SIZE);
+
+        writer.Write<uint16_t>(Net::NET_PROTOCOL_VERSION);
+        writer.Write<uint8_t>(static_cast<uint8_t>(Net::PacketType::Handshake));
+        writer.WriteString(playerName);
+
+        ENetPacket* packet = enet_packet_create(
+            writer.GetBuffer(),
+            writer.GetSizeWritten(),
+            ENET_PACKET_FLAG_RELIABLE
+        );
+
+        return enet_peer_send(serverPeer_, 0, packet) == 0;
+    }
+
     bool NetClient::SendPacket(Net::PacketType type, const void* payload, size_t payloadLen)
     {
         if (!host_ || !serverPeer_ || !connected_) return false;

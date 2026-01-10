@@ -47,7 +47,8 @@ namespace BSE
         bool ValidateIncomingPacket(const uint8_t* data, size_t len);
 
         void RelayPacket(const uint8_t* data, size_t len, ENetPeer* exclude, bool reliable, uint8_t channel = 1);
-
+        bool HandleHandshake(ENetPeer* fromPeer, DataSerializer& reader);
+        
         void GetSendFlagsForType(Net::PacketType type, enet_uint32& outFlags, uint8_t& outChannel) const;
     };
 }

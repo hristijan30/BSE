@@ -275,8 +275,6 @@ namespace BSE
 
         DataSerializer reader(const_cast<uint8_t*>(data), len, false);
         uint16_t protocolVersion = 0;
-        Net::PacketType type = Net::PacketType::Event;
-
         if (!reader.Read<uint16_t>(protocolVersion))
         {
             std::cerr << "[NetServer] Failed to read protocol version\n";
@@ -289,12 +287,27 @@ namespace BSE
             std::cerr << "[NetServer] Failed to read packet type\n";
             return;
         }
-        type = static_cast<Net::PacketType>(rawType);
+        Net::PacketType type = static_cast<Net::PacketType>(rawType);
 
         if (protocolVersion != Net::NET_PROTOCOL_VERSION)
         {
-            std::cerr << "[NetServer] Protocol version mismatch from peer (got=" << protocolVersion 
+            std::cerr << "[NetServer] Protocol version mismatch from peer (got=" << protocolVersion
                     << " expected=" << Net::NET_PROTOCOL_VERSION << ")\n";
+            return;
+        }
+
+        auto pit = peers_.find(from);
+        if (pit != peers_.end())
+        {
+            pit->second.lastHeard = std::chrono::steady_clock::now();
+        }
+
+        if (type == Net::PacketType::Handshake)
+        {
+            if (!HandleHandshake(from, reader))
+            {
+                std::cerr << "[NetServer] HandleHandshake failed for peer\n";
+            }
             return;
         }
 
@@ -384,6 +397,51 @@ namespace BSE
         enet_host_flush(host_);
 
         enet_packet_destroy(outPacket);
+    }
+    
+    bool NetServer::HandleHandshake(ENetPeer* fromPeer, DataSerializer& reader)
+    {
+        std::string playerName;
+        if (!reader.ReadString(playerName))
+        {
+            std::cerr << "[NetServer] HandleHandshake: failed to read player name\n";
+            return false;
+        }
+
+        auto it = peers_.find(fromPeer);
+        if (it == peers_.end())
+        {
+            std::cerr << "[NetServer] HandleHandshake: unknown peer\n";
+            return false;
+        }
+
+        PeerInfo& info = it->second;
+        info.peerName = playerName;
+
+        std::cout << "[NetServer] Peer id=" << info.id << " set name='" << playerName << "'\n";
+
+        {
+            DataSerializer writer(Net::NET_MAX_PACKET_SIZE);
+            writer.Write<uint16_t>(Net::NET_PROTOCOL_VERSION);
+            writer.Write<uint8_t>(static_cast<uint8_t>(Net::PacketType::Handshake));
+            writer.Write<uint32_t>(info.id);
+            writer.WriteString(std::string("Welcome"));
+
+            SendToPeer(info.id, writer.GetBuffer(), writer.GetSizeWritten(), /*reliable=*/true, /*channel=*/0);
+        }
+
+        {
+            DataSerializer writer(Net::NET_MAX_PACKET_SIZE);
+            writer.Write<uint16_t>(Net::NET_PROTOCOL_VERSION);
+            writer.Write<uint8_t>(static_cast<uint8_t>(Net::PacketType::Event));
+            writer.Write<uint16_t>(1);
+            writer.Write<uint32_t>(info.id);
+            writer.WriteString(info.peerName);
+
+            Broadcast(writer.GetBuffer(), writer.GetSizeWritten(), /*reliable=*/true, /*channel=*/0, /*excludePeerId=*/info.id);
+        }
+
+        return true;
     }
 
     void NetServer::GetSendFlagsForType(Net::PacketType type, enet_uint32& outFlags, uint8_t& outChannel) const
