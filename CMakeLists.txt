@@ -57,6 +57,7 @@ set(NETWORKING_SOURCE
     "Networking/DataSerializer.cpp"
     "Networking/DataSerializer.h"
     "Networking/ENet.h"
+    "Networking/NetConfig.cpp"
     "Networking/NetConfig.h"
     "Networking/PacketTypes.h"
     "Networking/Server.cpp"

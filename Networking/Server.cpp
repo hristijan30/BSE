@@ -1,5 +1,9 @@
 #include "Server.h"
 
+#include <iostream>
+#include <cstring>
+#include <algorithm>
+
 namespace BSE
 {
     NetServer::NetServer()
@@ -93,6 +97,153 @@ namespace BSE
     size_t NetServer::GetPeerCount() const
     {
         return peers_.size();
+    }
+
+    bool NetServer::KickPeer(uint32_t peerId)
+    {
+        for (auto& kv : peers_)
+        {
+            PeerInfo& info = kv.second;
+            if (info.id == peerId)
+            {
+                ENetPeer* peer = info.peer;
+                if (peer)
+                {
+                    enet_peer_disconnect(peer, 0);
+                    if (host_) enet_host_flush(host_);
+                    std::cout << "[NetServer] Kick requested for peer id=" << peerId << "\n";
+                    return true;
+                }
+            }
+        }
+
+        std::cerr << "[NetServer] KickPeer: peer id not found: " << peerId << "\n";
+        return false;
+    }
+
+    uint32_t NetServer::GetPeerID(std::string peerName)
+    {
+        for (const auto& kv : peers_)
+        {
+            const PeerInfo& info = kv.second;
+            if (!info.peerName.empty() && info.peerName == peerName)
+            {
+                return info.id;
+            }
+        }
+        return 0;
+    }
+
+    std::string NetServer::GetPeerNameByID(uint32_t peerId) const
+    {
+        for (const auto& kv : peers_)
+        {
+            const PeerInfo& info = kv.second;
+            if (info.id == peerId)
+            {
+                return info.peerName;
+            }
+        }
+        return std::string{};
+    }
+
+    bool NetServer::SetNameForPeerByID(uint32_t peerId, const std::string& name)
+    {
+        for (auto& kv : peers_)
+        {
+            PeerInfo& info = kv.second;
+            if (info.id == peerId)
+            {
+                info.peerName = name;
+                std::cout << "[NetServer] Set name for peer id=" << peerId << " to \"" << name << "\"\n";
+                return true;
+            }
+        }
+        std::cerr << "[NetServer] SetNameForPeerByID: peer id not found: " << peerId << "\n";
+        return false;
+    }
+
+    bool NetServer::SendToPeer(uint32_t peerId, const uint8_t* data, size_t len, bool reliable, uint8_t channel)
+    {
+        if (!host_) return false;
+        if (!data || len == 0) return false;
+        if (len > Net::NET_MAX_PACKET_SIZE)
+        {
+            std::cerr << "[NetServer] SendToPeer: packet too large: " << len << "\n";
+            return false;
+        }
+
+        ENetPeer* target = nullptr;
+        for (auto& kv : peers_)
+        {
+            PeerInfo& info = kv.second;
+            if (info.id == peerId)
+            {
+                target = info.peer;
+                break;
+            }
+        }
+
+        if (!target)
+        {
+            std::cerr << "[NetServer] SendToPeer: peer id not found: " << peerId << "\n";
+            return false;
+        }
+
+        enet_uint32 flags = reliable ? ENET_PACKET_FLAG_RELIABLE : 0;
+        ENetPacket* packet = enet_packet_create(data, static_cast<size_t>(len), flags);
+        if (!packet)
+        {
+            std::cerr << "[NetServer] SendToPeer: failed to create packet\n";
+            return false;
+        }
+
+        if (enet_peer_send(target, channel, packet) != 0)
+        {
+            std::cerr << "[NetServer] SendToPeer: enet_peer_send failed\n";
+            enet_packet_destroy(packet);
+            return false;
+        }
+
+        enet_host_flush(host_);
+        return true;
+    }
+
+    void NetServer::Broadcast(const uint8_t* data, size_t len, bool reliable, uint8_t channel, uint32_t excludePeerId)
+    {
+        if (!host_) return;
+        if (!data || len == 0) return;
+        if (len > Net::NET_MAX_PACKET_SIZE)
+        {
+            std::cerr << "[NetServer] Broadcast: packet too large: " << len << "\n";
+            return;
+        }
+
+        enet_uint32 flags = reliable ? ENET_PACKET_FLAG_RELIABLE : 0;
+
+        for (auto& kv : peers_)
+        {
+            PeerInfo& info = kv.second;
+            if (excludePeerId != 0 && info.id == excludePeerId) continue;
+            ENetPeer* peer = info.peer;
+            if (!peer) continue;
+
+            ENetPacket* pkt = enet_packet_create(data, static_cast<size_t>(len), flags);
+            if (!pkt)
+            {
+                std::cerr << "[NetServer] Broadcast: failed to create packet for peer id=" << info.id << "\n";
+                continue;
+            }
+
+            if (enet_peer_send(peer, channel, pkt) != 0)
+            {
+                std::cerr << "[NetServer] Broadcast: enet_peer_send failed for peer id=" << info.id << "\n";
+                enet_packet_destroy(pkt);
+                continue;
+            }
+        }
+
+        enet_host_flush(host_);
     }
 
     void NetServer::OnConnect(ENetEvent& event)
