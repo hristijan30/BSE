@@ -8,5 +8,5 @@ namespace BSE::Net
     constexpr size_t   NET_MAX_PACKET_SIZE  = 5000;
 
     constexpr uint32_t NET_DEFAULT_PORT = 27015;
-    extern uint32_t NET_MAX_PEERS;
+    extern DLL_EXPORT uint32_t NET_MAX_PEERS;
 }
