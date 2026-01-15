@@ -254,7 +254,7 @@ namespace BSE
         lastHeard_ = std::chrono::steady_clock::now();
     }
 
-    void NetClient::HandleDisconnect(ENetEvent& /*event*/)
+    void NetClient::HandleDisconnect(ENetEvent& event)
     {
         connected_ = false;
         std::cout << "[NetClient] Disconnected from server\n";
